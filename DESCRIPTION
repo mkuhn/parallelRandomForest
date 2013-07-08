@@ -1,6 +1,6 @@
-Package: randomForest
+Package: parallelRandomForest
 Title: Breiman and Cutler's random forests for classification and
-        regression
+        regression, enhanced for parallel computation
 Version: 4.6-7
 Date: 2012-10-16
 Depends: R (>= 2.5.0), stats

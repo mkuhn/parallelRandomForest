@@ -3,7 +3,9 @@ combine <- function(...) {
    padm0 <- function(x, len) rbind(x, matrix(0, nrow=len-nrow(x),
                                              ncol=ncol(x)))
    rflist <- list(...)
-   areForest <- sapply(rflist, function(x) inherits(x, "randomForest")) 
+   areForest <- sapply(rflist, function(x) inherits(x, "randomForest"))
+   if (any(!areForest))  rflist <- rflist[[1]]
+   areForest <- sapply(rflist, function(x) inherits(x, "randomForest"))
    if (any(!areForest)) stop("Argument must be a list of randomForest objects")
    ## Use the first component as a template
    rf <- rflist[[1]]
@@ -64,9 +66,9 @@ combine <- function(...) {
    } else {
        rf$forest <- NULL
    }
-   
+
    if (classRF) {
-       ## Combine the votes matrix: 
+       ## Combine the votes matrix:
        rf$votes <- 0
        rf$oob.times <- 0
        areVotes <- all(sapply(rflist, function(x) any(x$votes > 1, na.rf=TRUE)))
@@ -78,7 +80,7 @@ combine <- function(...) {
            }
        } else {
            for(i in 1:nforest) {
-               rf$oob.times <- rf$oob.times + rflist[[i]]$oob.times            
+               rf$oob.times <- rf$oob.times + rflist[[i]]$oob.times
                rf$votes <- rf$votes +
                    ifelse(is.na(rflist[[i]]$votes), 0, rflist[[i]]$votes) *
                        rflist[[i]]$oob.times
@@ -113,7 +115,7 @@ combine <- function(...) {
            rf$test$predicted <- rf$test$predicted / ntree
        }
    }
-   
+
    ## If variable importance is in all of them, compute the average
    ## (weighted by the number of trees in each forest)
    have.imp <- !any(sapply(rflist, function(x) is.null(x$importance)))
@@ -141,7 +143,7 @@ combine <- function(...) {
            rf$localImportance <- rf$localImportance / ntree
        }
    }
-   
+
    ## If proximity is in all of them, compute the average
    ## (weighted by the number of trees in each forest)
    have.prox <- !any(sapply(rflist, function(x) is.null(x$proximity)))
@@ -151,7 +153,7 @@ combine <- function(...) {
            rf$proximity <- rf$proximity + rflist[[i]]$proximity * rflist[[i]]$ntree
        rf$proximity <- rf$proximity / ntree
    }
-   
+
    ## Set confusion matrix and error rates to NULL
    if(classRF) {
        rf$confusion <- NULL
@@ -163,6 +165,6 @@ combine <- function(...) {
    } else {
        rf$mse <- rf$rsq <- NULL
        if(haveTest) rf$test$mse <- rf$test$rsq <- NULL
-   }   
+   }
    rf
 }
