@@ -13,13 +13,13 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
              proximity, oob.prox=proximity,
              norm.votes=TRUE, do.trace=FALSE,
              keep.forest=!is.null(y) && is.null(xtest), corr.bias=FALSE,
-             keep.inbag=FALSE, nchildren=1, ...) {
-        
+             keep.inbag=FALSE, nchildren=1, skip.checks = TRUE, ...) {
+
         if (importance) {
             write("Computing feature importance not supported yet by parallel RF.", file=stderr())
             importance <- F
         }
-        
+
         addclass <- is.null(y)
         classRF <- addclass || is.factor(y)
         if (!classRF && length(unique(y)) <= 5) {
@@ -27,10 +27,10 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
         }
         if (classRF && !addclass && length(unique(y)) < 2)
             stop("Need at least two classes to do classification.")
-        
+
         if (classRF)
             write("Warning: memory-saving techniques have not been applied yet to classification RF.", file=stderr())
-        
+
         n <- nrow(x)
         p <- ncol(x)
         if (n == 0) stop("data (x) has 0 rows")
@@ -62,10 +62,12 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
         }
 
         ## Check for NAs.
-        if (any(is.na(x))) stop("NA not permitted in predictors")
-        if (testdat && any(is.na(xtest))) stop("NA not permitted in xtest")
-        if (any(is.na(y))) stop("NA not permitted in response")
-        if (!is.null(ytest) && any(is.na(ytest))) stop("NA not permitted in ytest")
+        if (!skip.checks) {
+            if (any(is.na(x))) stop("NA not permitted in predictors")
+            if (testdat && any(is.na(xtest))) stop("NA not permitted in xtest")
+            if (any(is.na(y))) stop("NA not permitted in response")
+            if (!is.null(ytest) && any(is.na(ytest))) stop("NA not permitted in ytest")
+        }
 
         if (is.data.frame(x)) {
             xlevels <- lapply(x, mylevels)
@@ -198,7 +200,11 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
             if (maxnodes > nrnodes) warning("maxnodes exceeds its max value.")
             nrnodes <- min(c(nrnodes, max(c(maxnodes, 1))))
         }
-        storage.mode(x) <- "double"
+	if (storage.mode(x) != "double") {
+	   write("Warning: changing storage mode of predictor matrix to double, increasing memory consumption.")
+	   storage.mode(x) <- "double"
+	}
+
         if (testdat) {
             storage.mode(xtest) <- "double"
             if (is.null(ytest)) {
