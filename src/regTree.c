@@ -25,7 +25,7 @@
 #include <R.h>
 #include "rf.h"
 
-void regTree(double *x, double *y, int *sampling, int mdim, int nsample, int *lDaughter,
+void regTree(double *x, double *y, int *sampling, int mdim, int full_nsample, int nsample, int *lDaughter,
              int *rDaughter,
              double *upper, double *avnode, int *nodestatus, int nrnodes,
              int *treeSize, int nthsize, int mtry, int *mbest, int *cat,
@@ -75,7 +75,8 @@ void regTree(double *x, double *y, int *sampling, int mdim, int nsample, int *lD
 		jstat = 0;
 		decsplit = 0.0;
 
-		findBestSplit(x, sampling, jdex, y, mdim, nsample, ndstart, ndend, &msplit,
+
+		findBestSplit(x, sampling, jdex, y, mdim, full_nsample, nsample, ndstart, ndend, &msplit,
                       &decsplit, &ubest, &ndendl, &jstat, mtry, sumnode,
                       nodecnt, cat);
 		if (jstat == 1) {
@@ -145,7 +146,7 @@ void regTree(double *x, double *y, int *sampling, int mdim, int nsample, int *lD
 }
 
 /*--------------------------------------------------------------*/
-void findBestSplit(double *x, int *sampling, int *jdex, double *y, int mdim, int nsample,
+void findBestSplit(double *x, int *sampling, int *jdex, double *y, int mdim, int full_nsample, int nsample,
 		   int ndstart, int ndend, int *msplit, double *decsplit,
 		   double *ubest, int *ndendl, int *jstat, int mtry,
 		   double sumnode, int nodecnt, int *cat) {
@@ -182,7 +183,7 @@ void findBestSplit(double *x, int *sampling, int *jdex, double *y, int mdim, int
 		if (lc == 1) {
 			/* numeric variable */
 			for (j = ndstart; j <= ndend; ++j) {
-				xt[j] = x[kv + sampling[jdex[j] - 1] * mdim];
+				xt[j] = x[full_nsample * kv + sampling[jdex[j] - 1]];
 				yl[j] = y[jdex[j] - 1];
 			}
 		} else {
@@ -190,7 +191,7 @@ void findBestSplit(double *x, int *sampling, int *jdex, double *y, int mdim, int
             zeroInt(ncat, 32);
 			zeroDouble(sumcat, 32);
 			for (j = ndstart; j <= ndend; ++j) {
-				l = (int) x[kv + sampling[jdex[j] - 1] * mdim];
+				l = (int) x[full_nsample * kv + sampling[jdex[j] - 1]];
 				sumcat[l - 1] += y[jdex[j] - 1];
 				ncat[l - 1] ++;
 			}
@@ -200,7 +201,7 @@ void findBestSplit(double *x, int *sampling, int *jdex, double *y, int mdim, int
 			}
             /* Make the category mean the `pseudo' X data. */
 			for (j = 0; j < nsample; ++j) {
-				xt[j] = avcat[(int) x[kv + sampling[jdex[j] - 1] * mdim] - 1];
+				xt[j] = avcat[(int) x[full_nsample * kv + sampling[jdex[j] - 1]] - 1];
 				yl[j] = y[jdex[j] - 1];
 			}
 		}
@@ -314,11 +315,11 @@ void predictRegTree(double *x, int nsample, int mdim,
 	while (nodestatus[k] != NODE_TERMINAL) { /* go down the tree */
 	    m = splitVar[k] - 1;
 	    if (cat[m] == 1) {
-		k = (x[m + i*mdim] <= split[k]) ?
+		k = (x[nsample*m + i] <= split[k]) ?
 		    lDaughter[k] - 1 : rDaughter[k] - 1;
 	    } else {
 	        /* Split by a categorical predictor */
-	        k = cbestsplit[(int) x[m + i * mdim] - 1 + k * maxcat] ?
+	        k = cbestsplit[(int) x[nsample*m + i] - 1 + k * maxcat] ?
                     lDaughter[k] - 1 : rDaughter[k] - 1;
 	    }
 	}

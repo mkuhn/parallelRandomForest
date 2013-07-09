@@ -174,7 +174,7 @@ void regRF(double *x, double *y, int *xdim, int *sampsize,
 			for (n = 0; n < nsample; ++n) inbag[n + j * nsample] = in[n];
 		}
         /* grow the regression tree */
-		regTree(x, yb, sampling, mdim, *sampsize, lDaughter + idx, rDaughter + idx,
+		regTree(x, yb, sampling, mdim, nsample, *sampsize, lDaughter + idx, rDaughter + idx,
                 upper + idx, avnode + idx, nodestatus + idx, *nrnodes,
                 treeSize + j, *nthsize, *mtry, mbest + idx, cat, tgini,
                 varUsed);
@@ -259,37 +259,38 @@ void regRF(double *x, double *y, int *xdim, int *sampsize,
 
 		/* Variable importance */
 		if (varImp) {
-			for (mr = 0; mr < mdim; ++mr) {
-                if (varUsed[mr]) { /* Go ahead if the variable is used */
-                    /* make a copy of the m-th variable into xtmp */
-                    for (n = 0; n < nsample; ++n)
-                        xtmp[n] = x[mr + n * mdim];
-                    ooberrperm = 0.0;
-                    for (k = 0; k < nPerm; ++k) {
-                        permuteOOB(mr, x, in, nsample, mdim);
-                        predictRegTree(x, nsample, mdim, lDaughter + idx,
-                                       rDaughter + idx, nodestatus + idx, ytr,
-                                       upper + idx, avnode + idx, mbest + idx,
-                                       treeSize[j], cat, *maxcat, nodex);
-                        for (n = 0; n < nsample; ++n) {
-                            if (in[n] == 0) {
-                                r = ytr[n] - y[n];
-                                ooberrperm += r * r;
-                                if (localImp) {
-                                    impmat[mr + n * mdim] +=
-                                        (r*r - resOOB[n]*resOOB[n]) / nPerm;
-                                }
-                            }
-                        }
-                    }
-                    delta = (ooberrperm / nPerm - ooberr) / nOOB;
-                    errimp[mr] += delta;
-                    impSD[mr] += delta * delta;
-                    /* copy original data back */
-                    for (n = 0; n < nsample; ++n)
-                        x[mr + n * mdim] = xtmp[n];
-                }
-            }
+            // !!! not migrated yet to changed orientation of X matrix
+			// for (mr = 0; mr < mdim; ++mr) {
+   //              if (varUsed[mr]) { /* Go ahead if the variable is used */
+   //                  /* make a copy of the m-th variable into xtmp */
+   //                  for (n = 0; n < nsample; ++n)
+   //                      xtmp[n] = x[mr + n * mdim];
+   //                  ooberrperm = 0.0;
+   //                  for (k = 0; k < nPerm; ++k) {
+   //                      permuteOOB(mr, x, in, nsample, mdim);
+   //                      predictRegTree(x, nsample, mdim, lDaughter + idx,
+   //                                     rDaughter + idx, nodestatus + idx, ytr,
+   //                                     upper + idx, avnode + idx, mbest + idx,
+   //                                     treeSize[j], cat, *maxcat, nodex);
+   //                      for (n = 0; n < nsample; ++n) {
+   //                          if (in[n] == 0) {
+   //                              r = ytr[n] - y[n];
+   //                              ooberrperm += r * r;
+   //                              if (localImp) {
+   //                                  impmat[mr + n * mdim] +=
+   //                                      (r*r - resOOB[n]*resOOB[n]) / nPerm;
+   //                              }
+   //                          }
+   //                      }
+   //                  }
+   //                  delta = (ooberrperm / nPerm - ooberr) / nOOB;
+   //                  errimp[mr] += delta;
+   //                  impSD[mr] += delta * delta;
+   //                  /* copy original data back */
+   //                  for (n = 0; n < nsample; ++n)
+   //                      x[mr + n * mdim] = xtmp[n];
+   //              }
+   //          }
         }
     }
     PutRNGstate();

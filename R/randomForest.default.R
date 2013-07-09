@@ -14,6 +14,12 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
              norm.votes=TRUE, do.trace=FALSE,
              keep.forest=!is.null(y) && is.null(xtest), corr.bias=FALSE,
              keep.inbag=FALSE, nchildren=1, ...) {
+        
+        if (importance) {
+            write("Computing feature importance not supported yet by parallel RF.", file=stderr())
+            importance <- F
+        }
+        
         addclass <- is.null(y)
         classRF <- addclass || is.factor(y)
         if (!classRF && length(unique(y)) <= 5) {
@@ -21,6 +27,10 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
         }
         if (classRF && !addclass && length(unique(y)) < 2)
             stop("Need at least two classes to do classification.")
+        
+        if (classRF)
+            write("Warning: memory-saving techniques have not been applied yet to classification RF.", file=stderr())
+        
         n <- nrow(x)
         p <- ncol(x)
         if (n == 0) stop("data (x) has 0 rows")
@@ -188,11 +198,8 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
             if (maxnodes > nrnodes) warning("maxnodes exceeds its max value.")
             nrnodes <- min(c(nrnodes, max(c(maxnodes, 1))))
         }
-        ## Compiled code expects variables in rows and observations in columns.
-        x <- t(x)
         storage.mode(x) <- "double"
         if (testdat) {
-            xtest <- t(xtest)
             storage.mode(xtest) <- "double"
             if (is.null(ytest)) {
                 ytest <- labelts <- 0
@@ -207,11 +214,17 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
         }
 
         ntree <- ceiling( ntree / nchildren )
+        nt <- if (keep.forest) ntree else 1
 
         runRF <- function() {
-            nt <- if (keep.forest) ntree else 1
 
             if (classRF) {
+
+                x <- t(x)
+                if (testdat) {
+                    xtest <- t(xtest)
+                }
+
                 cwt <- classwt
                 threshold <- cutoff
                 error.test <- if (labelts) double((nclass+1) * ntree) else double(1)
@@ -364,6 +377,7 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
                                                                                                   x.row.names))) else NULL),
                             inbag = if (keep.inbag) rfout$inbag else NULL)
             } else {
+                ## Compiled code expects variables in rows and observations in columns.
                 rfout <- .C("regRF",
                             x,
                             as.double(y),

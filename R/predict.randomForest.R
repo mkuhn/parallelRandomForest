@@ -109,7 +109,6 @@
     ## get rid of warning:
     op <- options(warn=-1)
     on.exit(options(op))
-    x <- t(data.matrix(x))
 
     if (predict.all) {
         treepred <- if (object$type == "regression") {
@@ -204,6 +203,7 @@
                                              dimnames=list(rn[keep], 1:ntree))
             }
         } else {
+        x <- t(data.matrix(x))
         countts <- matrix(0, ntest, nclass)
         t1 <- .C("classForest",
                  mdim = as.integer(mdim),
