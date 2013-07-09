@@ -60,6 +60,8 @@ void regRF(double *x, double *y, int *xdim, int *sampsize,
 
     int *in, *nind, *nodex, *nodexts;
 
+    int *sampling;
+
     nsample = xdim[0];
     mdim = xdim[1];
     ntest = *nts;
@@ -72,10 +74,11 @@ void regRF(double *x, double *y, int *xdim, int *sampsize,
     if (*jprint == 0) *jprint = *nTree + 1;
 
     yb         = (double *) S_alloc(*sampsize, sizeof(double));
-    xb         = (double *) S_alloc(mdim * *sampsize, sizeof(double));
     ytr        = (double *) S_alloc(nsample, sizeof(double));
     xtmp       = (double *) S_alloc(nsample, sizeof(double));
     resOOB     = (double *) S_alloc(nsample, sizeof(double));
+
+    sampling = (int *) S_alloc(*sampsize, sizeof(int));
 
     in        = (int *) S_alloc(nsample, sizeof(int));
     nodex      = (int *) S_alloc(nsample, sizeof(int));
@@ -152,9 +155,7 @@ void regRF(double *x, double *y, int *xdim, int *sampsize,
 				k = xrand * nsample;
 				in[k] = 1;
 				yb[n] = y[k];
-				for(m = 0; m < mdim; ++m) {
-					xb[m + n * mdim] = x[m + k * mdim];
-				}
+                sampling[n] = k;
 			}
 		} else { /* sampling w/o replacement */
 			for (n = 0; n < nsample; ++n) nind[n] = n;
@@ -166,16 +167,14 @@ void regRF(double *x, double *y, int *xdim, int *sampsize,
 				last--;
 				in[k] = 1;
 				yb[n] = y[k];
-				for(m = 0; m < mdim; ++m) {
-					xb[m + n * mdim] = x[m + k * mdim];
-				}
+                sampling[n] = k;
 			}
 		}
 		if (keepInbag) {
 			for (n = 0; n < nsample; ++n) inbag[n + j * nsample] = in[n];
 		}
         /* grow the regression tree */
-		regTree(xb, yb, mdim, *sampsize, lDaughter + idx, rDaughter + idx,
+		regTree(x, yb, sampling, mdim, *sampsize, lDaughter + idx, rDaughter + idx,
                 upper + idx, avnode + idx, nodestatus + idx, *nrnodes,
                 treeSize + j, *nthsize, *mtry, mbest + idx, cat, tgini,
                 varUsed);

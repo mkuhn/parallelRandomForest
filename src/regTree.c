@@ -25,7 +25,7 @@
 #include <R.h>
 #include "rf.h"
 
-void regTree(double *x, double *y, int mdim, int nsample, int *lDaughter,
+void regTree(double *x, double *y, int *sampling, int mdim, int nsample, int *lDaughter,
              int *rDaughter,
              double *upper, double *avnode, int *nodestatus, int nrnodes,
              int *treeSize, int nthsize, int mtry, int *mbest, int *cat,
@@ -74,8 +74,8 @@ void regTree(double *x, double *y, int mdim, int nsample, int *lDaughter,
 		sumnode = nodecnt * avnode[k];
 		jstat = 0;
 		decsplit = 0.0;
-		
-		findBestSplit(x, jdex, y, mdim, nsample, ndstart, ndend, &msplit,
+
+		findBestSplit(x, sampling, jdex, y, mdim, nsample, ndstart, ndend, &msplit,
                       &decsplit, &ubest, &ndendl, &jstat, mtry, sumnode,
                       nodecnt, cat);
 		if (jstat == 1) {
@@ -89,13 +89,13 @@ void regTree(double *x, double *y, int mdim, int nsample, int *lDaughter,
 		upper[k] = ubest;
 		tgini[msplit - 1] += decsplit;
 		nodestatus[k] = NODE_INTERIOR;
-		
+
 		/* leftnode no.= ncur+1, rightnode no. = ncur+2. */
 		nodepop[ncur + 1] = ndendl - ndstart + 1;
 		nodepop[ncur + 2] = ndend - ndendl;
 		nodestart[ncur + 1] = ndstart;
 		nodestart[ncur + 2] = ndendl + 1;
-		
+
 		/* compute mean and sum of squares for the left daughter node */
 		av = 0.0;
 		ss = 0.0;
@@ -125,7 +125,7 @@ void regTree(double *x, double *y, int mdim, int nsample, int *lDaughter,
 		if (nodepop[ncur + 2] <= nthsize) {
 			nodestatus[ncur + 2] = NODE_TERMINAL;
 		}
-		
+
 		/* map the daughter nodes */
 		lDaughter[k] = ncur + 1 + 1;
 		rDaughter[k] = ncur + 2 + 1;
@@ -145,7 +145,7 @@ void regTree(double *x, double *y, int mdim, int nsample, int *lDaughter,
 }
 
 /*--------------------------------------------------------------*/
-void findBestSplit(double *x, int *jdex, double *y, int mdim, int nsample,
+void findBestSplit(double *x, int *sampling, int *jdex, double *y, int mdim, int nsample,
 		   int ndstart, int ndend, int *msplit, double *decsplit,
 		   double *ubest, int *ndendl, int *jstat, int mtry,
 		   double sumnode, int nodecnt, int *cat) {
@@ -177,12 +177,12 @@ void findBestSplit(double *x, int *jdex, double *y, int mdim, int nsample,
 		kv = mind[j];
         swapInt(mind[j], mind[last]);
 		last--;
-		
+
 		lc = cat[kv];
 		if (lc == 1) {
 			/* numeric variable */
 			for (j = ndstart; j <= ndend; ++j) {
-				xt[j] = x[kv + (jdex[j] - 1) * mdim];
+				xt[j] = x[kv + sampling[jdex[j] - 1] * mdim];
 				yl[j] = y[jdex[j] - 1];
 			}
 		} else {
@@ -190,7 +190,7 @@ void findBestSplit(double *x, int *jdex, double *y, int mdim, int nsample,
             zeroInt(ncat, 32);
 			zeroDouble(sumcat, 32);
 			for (j = ndstart; j <= ndend; ++j) {
-				l = (int) x[kv + (jdex[j] - 1) * mdim];
+				l = (int) x[kv + sampling[jdex[j] - 1] * mdim];
 				sumcat[l - 1] += y[jdex[j] - 1];
 				ncat[l - 1] ++;
 			}
@@ -200,7 +200,7 @@ void findBestSplit(double *x, int *jdex, double *y, int mdim, int nsample,
 			}
             /* Make the category mean the `pseudo' X data. */
 			for (j = 0; j < nsample; ++j) {
-				xt[j] = avcat[(int) x[kv + (jdex[j] - 1) * mdim] - 1];
+				xt[j] = avcat[(int) x[kv + sampling[jdex[j] - 1] * mdim] - 1];
 				yl[j] = y[jdex[j] - 1];
 			}
 		}
@@ -267,7 +267,7 @@ void findBestSplit(double *x, int *jdex, double *y, int mdim, int nsample,
 	    }
         if (*ndendl >= ndend) *ndendl = ndend - 1;
         for (j = ndstart; j <= ndend; ++j) jdex[j] = ncase[j];
-		
+
         lc = cat[*msplit - 1];
         if (lc > 1) {
             for (j = 0; j < lc; ++j) {
@@ -276,7 +276,7 @@ void findBestSplit(double *x, int *jdex, double *y, int mdim, int nsample,
             *ubest = pack(lc, icat);
         }
     } else *jstat = 1;
-	
+
     Free(ncase);
     Free(mind);
     Free(v);
