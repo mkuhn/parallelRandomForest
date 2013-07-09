@@ -226,6 +226,7 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
 
             if (classRF) {
 
+                ## Compiled code expects variables in rows and observations in columns.
                 x <- t(x)
                 if (testdat) {
                     xtest <- t(xtest)
@@ -383,7 +384,6 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
                                                                                                   x.row.names))) else NULL),
                             inbag = if (keep.inbag) rfout$inbag else NULL)
             } else {
-                ## Compiled code expects variables in rows and observations in columns.
                 rfout <- .C("regRF",
                             x,
                             as.double(y),
