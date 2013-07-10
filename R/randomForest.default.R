@@ -13,7 +13,7 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
              proximity, oob.prox=proximity,
              norm.votes=TRUE, do.trace=FALSE,
              keep.forest=!is.null(y) && is.null(xtest), corr.bias=FALSE,
-             keep.inbag=FALSE, nchildren=1, skip.checks = TRUE, ...) {
+             keep.inbag=FALSE, nthreads=1, skip.checks = TRUE, ...) {
 
         if (importance) {
             write("Computing feature importance not supported yet by parallel RF.", file=stderr())
@@ -219,7 +219,7 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
             labelts <- FALSE
         }
 
-        ntree <- ceiling( ntree / nchildren )
+        ntree <- ceiling( ntree / nthreads )
         nt <- if (keep.forest) ntree else 1
 
         runRF <- function() {
@@ -500,10 +500,10 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
             out
         }
 
-        if (nchildren == 1) return(runRF())
+        if (nthreads == 1) return(runRF())
 
         require(parallel)
-        for (child_idx in 1:nchildren) {
+        for (child_idx in 1:nthreads) {
             mcparallel(runRF())
         }
 
