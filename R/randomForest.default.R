@@ -208,14 +208,17 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
         }
 
         if (testdat) {
-            storage.mode(xtest) <- "double"
+
+            if (storage.mode(xtest) != "raw") {
+                stop("Error: need xtest matrix of storage mode raw.")
+            }
             if (is.null(ytest)) {
                 ytest <- labelts <- 0
             } else {
                 labelts <- TRUE
             }
         } else {
-            xtest <- double(1)
+            xtest <- raw(1)
             ytest <- double(1)
             ntest <- 1
             labelts <- FALSE
@@ -395,7 +398,7 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
                 rightDaughter <- matrix(integer(nrnodes * nt), ncol=nt)
                 nodepred <- matrix(double(nrnodes * nt), ncol=nt)
                 bestvar <- matrix(integer(nrnodes * nt), ncol=nt)
-                xbestsplit <- matrix(double(nrnodes * nt), ncol=nt)
+                xbestsplit <- matrix(raw(nrnodes * nt), ncol=nt)
                 mse <- double(ntree)
                 keep <- as.integer(c(keep.forest, keep.inbag))
                 replace <- as.integer(replace)
@@ -497,9 +500,9 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
                             ntree = ntree,
                             mtry = mtry,
                             forest = if (keep.forest)
-                                c(c(ndbigtree, nodestatus, leftDaughter,
-                                          rightDaughter, nodepred, bestvar,
-                                          xbestsplit),
+                                c(list(ndbigtree = ndbigtree), list(nodestatus = nodestatus), list(leftDaughter = leftDaughter),
+                                          list(rightDaughter = rightDaughter), list(nodepred = nodepred), list(bestvar = bestvar),
+                                          list(xbestsplit = xbestsplit),
                                   list(ncat = ncat), list(nrnodes=max.nodes),
                                   list(ntree=ntree), list(xlevels=xlevels)) else NULL,
                             coefs = if (corr.bias) coef else NULL,

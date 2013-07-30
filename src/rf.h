@@ -41,7 +41,7 @@ void classForest(int *mdim, int *ntest, int *nclass, int *maxcat,
                  int *keepPred, int *prox, double *proxmatrix, int *nodes);
 
 void regTree(unsigned char *x, double *y, int *sampling, int mdim, int full_nsample, int nsample,
-             int *lDaughter, int *rDaughter, double *upper, double *avnode,
+             int *lDaughter, int *rDaughter, unsigned char *upper, double *avnode,
              int *nodestatus, int nrnodes, int *treeSize, int nthsize,
              int mtry, int *mbest, int *cat, double *tgini, int *varUsed);
 
@@ -52,7 +52,7 @@ void findBestSplit(unsigned char *x, int *sampling, int *jdex, double *y, int md
 
 void predictRegTree(unsigned char *x, int nsample, int mdim,
                     int *lDaughter, int *rDaughter, int *nodestatus,
-                    double *ypred, double *split, double *nodepred,
+                    double *ypred, unsigned char *split, double *nodepred,
                     int *splitVar, int treeSize, int *cat, int maxcat,
                     int *nodex);
 

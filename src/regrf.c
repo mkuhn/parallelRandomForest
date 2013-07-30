@@ -17,37 +17,7 @@
 
 #include "rf.h"
 
-void simpleLinReg(int nsample, unsigned char *x, double *y, double *coef,
-                  double *mse, int *hasPred);
-
-
-SEXP callRegRF(SEXP x, SEXP y, SEXP xdim, SEXP sampsize,
-               SEXP nthsize, SEXP nrnodes, SEXP nTree, SEXP mtry, SEXP imp,
-               SEXP cat, SEXP maxcat, SEXP jprint, SEXP doProx, SEXP oobprox,
-               SEXP biasCorr, SEXP yptr, SEXP errimp, SEXP impmat,
-               SEXP impSD, SEXP prox, SEXP treeSize, SEXP nodestatus,
-               SEXP lDaughter, SEXP rDaughter, SEXP avnode, SEXP mbest,
-               SEXP upper, SEXP mse, SEXP keepf, SEXP replace,
-               SEXP testdat, SEXP xts, SEXP nts, SEXP yts, SEXP labelts,
-               SEXP yTestPred, SEXP proxts, SEXP msets, SEXP coef,
-               SEXP nout, SEXP inbag) {
-
-
-    regRF(RAW(x), REAL(y), INTEGER(xdim), INTEGER(sampsize),
-          INTEGER(nthsize), INTEGER(nrnodes), INTEGER(nTree), INTEGER(mtry), INTEGER(imp),
-          INTEGER(cat), INTEGER(maxcat), INTEGER(jprint), INTEGER(doProx), INTEGER(oobprox),
-          INTEGER(biasCorr), REAL(yptr), REAL(errimp), REAL(impmat),
-          REAL(impSD), REAL(prox), INTEGER(treeSize), INTEGER(nodestatus),
-          INTEGER(lDaughter), INTEGER(rDaughter), REAL(avnode), INTEGER(mbest),
-          REAL(upper), REAL(mse), INTEGER(keepf), INTEGER(replace),
-          INTEGER(testdat), REAL(xts), INTEGER(nts), REAL(yts), INTEGER(labelts),
-          REAL(yTestPred), REAL(proxts), REAL(msets), REAL(coef),
-          INTEGER(nout), INTEGER(inbag)
-         );
-
-    return R_NilValue;
-
-}
+void simpleLinReg(int nsample, double *x, double *y, double *coef, double *mse, int *hasPred);
 
 
 void regRF(unsigned char *x, double *y, int *xdim, int *sampsize,
@@ -56,8 +26,8 @@ void regRF(unsigned char *x, double *y, int *xdim, int *sampsize,
            int *biasCorr, double *yptr, double *errimp, double *impmat,
            double *impSD, double *prox, int *treeSize, int *nodestatus,
            int *lDaughter, int *rDaughter, double *avnode, int *mbest,
-           double *upper, double *mse, int *keepf, int *replace,
-           int *testdat, double *xts, int *nts, double *yts, int *labelts,
+           unsigned char *upper, double *mse, int *keepf, int *replace,
+           int *testdat, unsigned char *xts, int *nts, double *yts, int *labelts,
            double *yTestPred, double *proxts, double *msets, double *coef,
            int *nout, int *inbag) {
     /*************************************************************************
@@ -371,6 +341,35 @@ void regRF(unsigned char *x, double *y, int *xdim, int *sampsize,
     for (m = 0; m < mdim; ++m) tgini[m] /= *nTree;
 }
 
+SEXP callRegRF(SEXP x, SEXP y, SEXP xdim, SEXP sampsize,
+               SEXP nthsize, SEXP nrnodes, SEXP nTree, SEXP mtry, SEXP imp,
+               SEXP cat, SEXP maxcat, SEXP jprint, SEXP doProx, SEXP oobprox,
+               SEXP biasCorr, SEXP yptr, SEXP errimp, SEXP impmat,
+               SEXP impSD, SEXP prox, SEXP treeSize, SEXP nodestatus,
+               SEXP lDaughter, SEXP rDaughter, SEXP avnode, SEXP mbest,
+               SEXP upper, SEXP mse, SEXP keepf, SEXP replace,
+               SEXP testdat, SEXP xts, SEXP nts, SEXP yts, SEXP labelts,
+               SEXP yTestPred, SEXP proxts, SEXP msets, SEXP coef,
+               SEXP nout, SEXP inbag) {
+
+
+    regRF(RAW(x), REAL(y), INTEGER(xdim), INTEGER(sampsize),
+          INTEGER(nthsize), INTEGER(nrnodes), INTEGER(nTree), INTEGER(mtry), INTEGER(imp),
+          INTEGER(cat), INTEGER(maxcat), INTEGER(jprint), INTEGER(doProx), INTEGER(oobprox),
+          INTEGER(biasCorr), REAL(yptr), REAL(errimp), REAL(impmat),
+          REAL(impSD), REAL(prox), INTEGER(treeSize), INTEGER(nodestatus),
+          INTEGER(lDaughter), INTEGER(rDaughter), REAL(avnode), INTEGER(mbest),
+          RAW(upper), REAL(mse), INTEGER(keepf), INTEGER(replace),
+          INTEGER(testdat), RAW(xts), INTEGER(nts), REAL(yts), INTEGER(labelts),
+          REAL(yTestPred), REAL(proxts), REAL(msets), REAL(coef),
+          INTEGER(nout), INTEGER(inbag)
+         );
+
+    return R_NilValue;
+
+}
+
+
 /*----------------------------------------------------------------------*/
 void regForest(unsigned char *x, double *ypred, int *mdim, int *n,
                int *ntree, int *lDaughter, int *rDaughter,
@@ -378,7 +377,8 @@ void regForest(unsigned char *x, double *ypred, int *mdim, int *n,
                double *avnodes, int *mbest, int *treeSize, int *cat,
                int *maxcat, int *keepPred, double *allpred, int *doProx,
                double *proxMat, int *nodes, int *nodex) {
-    int i, j, idx1, idx2, *junk;
+    int i, j, *junk;
+    size_t idx1, idx2;
     double *ytree;
 
     junk = NULL;
@@ -393,6 +393,7 @@ void regForest(unsigned char *x, double *ypred, int *mdim, int *n,
     idx1 = 0;
     idx2 = 0;
     for (i = 0; i < *ntree; ++i) {
+
         zeroDouble(ytree, *n);
         predictRegTree(x, *n, *mdim, lDaughter + idx1, rDaughter + idx1,
                        nodestatus + idx1, ytree, xsplit + idx1,
@@ -403,6 +404,7 @@ void regForest(unsigned char *x, double *ypred, int *mdim, int *n,
         if (*keepPred) {
             for (j = 0; j < *n; ++j) allpred[j + i * *n] = ytree[j];
         }
+
         /* if desired, do proximities for this round */
         if (*doProx) computeProximity(proxMat, 0, nodex + idx2, junk,
                                           junk, *n);
@@ -421,7 +423,26 @@ void regForest(unsigned char *x, double *ypred, int *mdim, int *n,
     }
 }
 
-void simpleLinReg(int nsample, unsigned char *x, double *y, double *coef,
+SEXP callRegForest(SEXP x, SEXP ypred, SEXP mdim, SEXP n,
+               SEXP ntree, SEXP lDaughter, SEXP rDaughter,
+               SEXP nodestatus, SEXP nrnodes, SEXP xsplit,
+               SEXP avnodes, SEXP mbest, SEXP treeSize, SEXP cat,
+               SEXP maxcat, SEXP keepPred, SEXP allpred, SEXP doProx,
+               SEXP proxMat, SEXP nodes, SEXP nodex)
+{
+
+    regForest(RAW(x), REAL(ypred), INTEGER(mdim), INTEGER(n),
+               INTEGER(ntree), INTEGER(lDaughter), INTEGER(rDaughter),
+               INTEGER(nodestatus), INTEGER(nrnodes), RAW(xsplit),
+               REAL(avnodes), INTEGER(mbest), INTEGER(treeSize), INTEGER(cat),
+               INTEGER(maxcat), INTEGER(keepPred), REAL(allpred), INTEGER(doProx),
+               REAL(proxMat), INTEGER(nodes), INTEGER(nodex));
+
+    return R_NilValue;
+}
+
+
+void simpleLinReg(int nsample, double *x, double *y, double *coef,
                   double *mse, int *hasPred) {
     /* Compute simple linear regression of y on x, returning the coefficients,
        the average squared residual, and the predicted values (overwriting y). */

@@ -131,10 +131,19 @@
                 object$forest$treemap <- NULL
             }
 
-            keepIndex <- "ypred"
-            if (predict.all) keepIndex <- c(keepIndex, "treepred")
-            if (proximity) keepIndex <- c(keepIndex, "proximity")
-            if (nodes) keepIndex <- c(keepIndex, "nodexts")
+            ypred <- double(ntest)
+            treepred <- as.double(treepred)
+            proxmatrix <- as.double(proxmatrix)
+
+            if (is.null(object$forest$leftDaughter)) stop("Missing forest variable: leftDaughter")
+            if (is.null(object$forest$rightDaughter)) stop("Missing forest variable: rightDaughter")
+            if (is.null(object$forest$nodestatus)) stop("Missing forest variable: nodestatus")
+            if (is.null(object$forest$xbestsplit)) stop("Missing forest variable: xbestsplit")
+            if (is.null(object$forest$nodepred)) stop("Missing forest variable: nodepred")
+            if (is.null(object$forest$bestvar)) stop("Missing forest variable: bestvar")
+            if (is.null(object$forest$ndbigtree)) stop("Missing forest variable: ndbigtree")
+            if (is.null(object$forest$ncat)) stop("Missing forest variable: ncat")
+
             ## Ensure storage mode is what is expected in C.
             if (! is.integer(object$forest$leftDaughter))
                 storage.mode(object$forest$leftDaughter) <- "integer"
@@ -142,8 +151,8 @@
                 storage.mode(object$forest$rightDaughter) <- "integer"
             if (! is.integer(object$forest$nodestatus))
                 storage.mode(object$forest$nodestatus) <- "integer"
-            if (! is.double(object$forest$xbestsplit))
-                storage.mode(object$forest$xbestsplit) <- "double"
+            if (! is.raw(object$forest$xbestsplit))
+                storage.mode(object$forest$xbestsplit) <- "raw"
             if (! is.double(object$forest$nodepred))
                 storage.mode(object$forest$nodepred) <- "double"
             if (! is.integer(object$forest$bestvar))
@@ -153,9 +162,9 @@
             if (! is.integer(object$forest$ncat))
                 storage.mode(object$forest$ncat) <- "integer"
 
-            ans <- .C("regForest",
-                  as.double(x),
-                  ypred = double(ntest),
+            .Call("callRegForest",
+                  x,
+                  ypred = ypred,
                   as.integer(mdim),
                   as.integer(ntest),
                   as.integer(ntree),
@@ -170,36 +179,36 @@
                   object$forest$ncat,
                   as.integer(maxcat),
                   as.integer(predict.all),
-                  treepred = as.double(treepred),
+                  treepred = treepred,
                   as.integer(proximity),
-                  proximity = as.double(proxmatrix),
+                  proxmatrix = proxmatrix,
                   nodes = as.integer(nodes),
-                  nodexts = as.integer(nodexts),
+                  nodexts = nodexts,
                   DUP=FALSE,
-                  PACKAGE = "randomForest")[keepIndex]
+                  PACKAGE = "parallelRandomForest")
             ## Apply bias correction if needed.
             yhat <- rep(NA, length(rn))
             names(yhat) <- rn
             if (!is.null(object$coefs)) {
-                yhat[keep] <- object$coefs[1] + object$coefs[2] * ans$ypred
+                yhat[keep] <- object$coefs[1] + object$coefs[2] * ypred
             } else {
-                yhat[keep] <- ans$ypred
+                yhat[keep] <- ypred
             }
             if (predict.all) {
                 treepred <- matrix(NA, length(rn), ntree,
                                    dimnames=list(rn, NULL))
-                treepred[keep,] <- ans$treepred
+                treepred[keep,] <- treepred
             }
             if (!proximity) {
                 res <- if (predict.all)
                     list(aggregate=yhat, individual=treepred) else yhat
             } else {
                 res <- list(predicted = yhat,
-                            proximity = structure(ans$proximity,
+                            proximity = structure(proxmatrix,
                             dim=c(ntest, ntest), dimnames=list(rn, rn)))
             }
             if (nodes) {
-                attr(res, "nodes") <- matrix(ans$nodexts, ntest, ntree,
+                attr(res, "nodes") <- matrix(nodexts, ntest, ntree,
                                              dimnames=list(rn[keep], 1:ntree))
             }
         } else {
@@ -228,11 +237,9 @@
                  nodexts = as.integer(nodexts),
                  ndbigtree = as.integer(object$forest$ndbigtree),
                  predict.all = as.integer(predict.all),
-                 prox = as.integer(proximity),
-                 proxmatrix = as.double(proxmatrix),
                  nodes = as.integer(nodes),
                  DUP=FALSE,
-                 PACKAGE = "randomForest")
+                 PACKAGE = "parallelRandomForest")
         if (out.type > 1) {
             out.class.votes <- t(matrix(t1$countts, nrow = nclass, ncol = ntest))
             if (norm.votes)
