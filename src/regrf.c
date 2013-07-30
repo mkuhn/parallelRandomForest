@@ -17,7 +17,7 @@
 
 #include "rf.h"
 
-void simpleLinReg(int nsample, double *x, double *y, double *coef,
+void simpleLinReg(int nsample, unsigned char *x, double *y, double *coef,
                   double *mse, int *hasPred);
 
 
@@ -33,7 +33,7 @@ SEXP callRegRF(SEXP x, SEXP y, SEXP xdim, SEXP sampsize,
                SEXP nout, SEXP inbag) {
 
 
-    regRF(REAL(x), REAL(y), INTEGER(xdim), INTEGER(sampsize),
+    regRF(RAW(x), REAL(y), INTEGER(xdim), INTEGER(sampsize),
           INTEGER(nthsize), INTEGER(nrnodes), INTEGER(nTree), INTEGER(mtry), INTEGER(imp),
           INTEGER(cat), INTEGER(maxcat), INTEGER(jprint), INTEGER(doProx), INTEGER(oobprox),
           INTEGER(biasCorr), REAL(yptr), REAL(errimp), REAL(impmat),
@@ -50,7 +50,7 @@ SEXP callRegRF(SEXP x, SEXP y, SEXP xdim, SEXP sampsize,
 }
 
 
-void regRF(double *x, double *y, int *xdim, int *sampsize,
+void regRF(unsigned char *x, double *y, int *xdim, int *sampsize,
            int *nthsize, int *nrnodes, int *nTree, int *mtry, int *imp,
            int *cat, int *maxcat, int *jprint, int *doProx, int *oobprox,
            int *biasCorr, double *yptr, double *errimp, double *impmat,
@@ -83,7 +83,8 @@ void regRF(double *x, double *y, int *xdim, int *sampsize,
     double errts = 0.0, averrb, meanY, meanYts, varY, varYts, r, xrand,
            errb = 0.0, resid=0.0, ooberr, ooberrperm, delta, *resOOB;
 
-    double *yb, *xtmp, *xb, *ytr, *ytree, *tgini;
+    double *yb, *ytr, *ytree, *tgini;
+    unsigned char *xtmp, *xb;
 
     int k, m, mr, n, nOOB, j, jout, idx, ntest, last, ktmp, nPerm,
         nsample, mdim, keepF, keepInbag;
@@ -106,7 +107,7 @@ void regRF(double *x, double *y, int *xdim, int *sampsize,
 
     yb         = (double *) S_alloc(*sampsize, sizeof(double));
     ytr        = (double *) S_alloc(nsample, sizeof(double));
-    xtmp       = (double *) S_alloc(nsample, sizeof(double));
+    xtmp       = (unsigned char *) S_alloc(nsample, sizeof(char));
     resOOB     = (double *) S_alloc(nsample, sizeof(double));
 
     sampling = (int *) S_alloc(*sampsize, sizeof(int));
@@ -371,9 +372,9 @@ void regRF(double *x, double *y, int *xdim, int *sampsize,
 }
 
 /*----------------------------------------------------------------------*/
-void regForest(double *x, double *ypred, int *mdim, int *n,
+void regForest(unsigned char *x, double *ypred, int *mdim, int *n,
                int *ntree, int *lDaughter, int *rDaughter,
-               int *nodestatus, int *nrnodes, double *xsplit,
+               int *nodestatus, int *nrnodes, unsigned char *xsplit,
                double *avnodes, int *mbest, int *treeSize, int *cat,
                int *maxcat, int *keepPred, double *allpred, int *doProx,
                double *proxMat, int *nodes, int *nodex) {
@@ -420,7 +421,7 @@ void regForest(double *x, double *ypred, int *mdim, int *n,
     }
 }
 
-void simpleLinReg(int nsample, double *x, double *y, double *coef,
+void simpleLinReg(int nsample, unsigned char *x, double *y, double *coef,
                   double *mse, int *hasPred) {
     /* Compute simple linear regression of y on x, returning the coefficients,
        the average squared residual, and the predicted values (overwriting y). */

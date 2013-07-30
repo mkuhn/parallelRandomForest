@@ -15,6 +15,11 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
              keep.forest=!is.null(y) && is.null(xtest), corr.bias=FALSE,
              keep.inbag=FALSE, nthreads=1, skip.checks = TRUE, ...) {
 
+
+        if (storage.mode(x) != "raw") {
+           stop("Error: need matrix of storage mode raw.")
+        }
+
         if (importance) {
             write("Computing feature importance not supported yet by parallel RF.", file=stderr())
             importance <- F
@@ -167,6 +172,7 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
             impSD <- double(1)
         }
 
+
         nsample <- if (addclass) 2 * n else n
         Stratify <- length(sampsize) > 1
         if ((!Stratify) && sampsize > nrow(x)) stop("sampsize too large")
@@ -200,10 +206,6 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
             if (maxnodes > nrnodes) warning("maxnodes exceeds its max value.")
             nrnodes <- min(c(nrnodes, max(c(maxnodes, 1))))
         }
-	if (storage.mode(x) != "double") {
-	   write("Warning: changing storage mode of predictor matrix to double, increasing memory consumption.")
-	   storage.mode(x) <- "double"
-	}
 
         if (testdat) {
             storage.mode(xtest) <- "double"

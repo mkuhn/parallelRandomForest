@@ -25,7 +25,7 @@
 #include <R.h>
 #include "rf.h"
 
-void regTree(double *x, double *y, int *sampling, int mdim, int full_nsample, int nsample, int *lDaughter,
+void regTree(unsigned char *x, double *y, int *sampling, int mdim, int full_nsample, int nsample, int *lDaughter,
              int *rDaughter,
              double *upper, double *avnode, int *nodestatus, int nrnodes,
              int *treeSize, int nthsize, int mtry, int *mbest, int *cat,
@@ -146,17 +146,18 @@ void regTree(double *x, double *y, int *sampling, int mdim, int full_nsample, in
 }
 
 /*--------------------------------------------------------------*/
-void findBestSplit(double *x, int *sampling, int *jdex, double *y, int mdim, int full_nsample, int nsample,
+void findBestSplit(unsigned char *x, int *sampling, int *jdex, double *y, int mdim, int full_nsample, int nsample,
                    int ndstart, int ndend, int *msplit, double *decsplit,
                    double *ubest, int *ndendl, int *jstat, int mtry,
                    double sumnode, int nodecnt, int *cat) {
     int last, ncat[32], icat[32], lc, nl, nr, npopl, npopr;
     int i, j, kv, l, *mind, *ncase;
-    double *xt, *ut, *v, *yl, sumcat[32], avcat[32], tavcat[32], ubestt;
+    unsigned char *xt;
+    double *ut, *yl, *v, sumcat[32], avcat[32], tavcat[32], ubestt;
     double crit, critmax, critvar, suml, sumr, d, critParent;
 
     ut = (double *) Calloc(nsample, double);
-    xt = (double *) Calloc(nsample, double);
+    xt = (unsigned char *) Calloc(nsample, unsigned char);
     v  = (double *) Calloc(nsample, double);
     yl = (double *) Calloc(nsample, double);
     mind  = (int *) Calloc(mdim, int);
@@ -287,7 +288,7 @@ void findBestSplit(double *x, int *sampling, int *jdex, double *y, int mdim, int
 }
 
 /*====================================================================*/
-void predictRegTree(double *x, int nsample, int mdim,
+void predictRegTree(unsigned char *x, int nsample, int mdim,
                     int *lDaughter, int *rDaughter, int *nodestatus,
                     double *ypred, double *split, double *nodepred,
                     int *splitVar, int treeSize, int *cat, int maxcat,
