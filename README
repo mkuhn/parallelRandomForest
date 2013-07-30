@@ -12,3 +12,4 @@ due to the implementation of  the "combine" function this means that some
 fields of the result are empty. Note that if your whole forest could be grown
 in seconds, it doesn't make sense to use threads as there is some overhead (in
 terms of time) to start a new subprocess.
+
