@@ -384,7 +384,31 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
                                                                                                   x.row.names))) else NULL),
                             inbag = if (keep.inbag) rfout$inbag else NULL)
             } else {
-                rfout <- .C("regRF",
+
+
+                ypred <- double(n)
+                ndbigtree <- integer(ntree)
+                nodestatus <- matrix(integer(nrnodes * nt), ncol=nt)
+                leftDaughter <- matrix(integer(nrnodes * nt), ncol=nt)
+                rightDaughter <- matrix(integer(nrnodes * nt), ncol=nt)
+                nodepred <- matrix(double(nrnodes * nt), ncol=nt)
+                bestvar <- matrix(integer(nrnodes * nt), ncol=nt)
+                xbestsplit <- matrix(double(nrnodes * nt), ncol=nt)
+                mse <- double(ntree)
+                keep <- as.integer(c(keep.forest, keep.inbag))
+                replace <- as.integer(replace)
+                testdat <- as.integer(testdat)
+                xts <- xtest
+                ntest <- as.integer(ntest)
+                yts <- as.double(ytest)
+                labelts <- as.integer(labelts)
+                ytestpred <- double(ntest)
+                msets <- double(if (labelts) ntree else 1)
+                coef <- double(2)
+                oob.times <- integer(n)
+                inbag <- if (keep.inbag) matrix(integer(n * ntree), n) else integer(1)
+
+                .Call("callRegRF",
                             x,
                             as.double(y),
                             as.integer(c(n, p)),
@@ -400,99 +424,98 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
                             as.integer(proximity),
                             as.integer(oob.prox),
                             as.integer(corr.bias),
-                            ypred = double(n),
+                            ypred = ypred,
                             impout = impout,
                             impmat = impmat,
                             impSD = impSD,
                             prox = prox,
-                            ndbigtree = integer(ntree),
-                            nodestatus = matrix(integer(nrnodes * nt), ncol=nt),
-                            leftDaughter = matrix(integer(nrnodes * nt), ncol=nt),
-                            rightDaughter = matrix(integer(nrnodes * nt), ncol=nt),
-                            nodepred = matrix(double(nrnodes * nt), ncol=nt),
-                            bestvar = matrix(integer(nrnodes * nt), ncol=nt),
-                            xbestsplit = matrix(double(nrnodes * nt), ncol=nt),
-                            mse = double(ntree),
-                            keep = as.integer(c(keep.forest, keep.inbag)),
-                            replace = as.integer(replace),
-                            testdat = as.integer(testdat),
-                            xts = xtest,
-                            ntest = as.integer(ntest),
-                            yts = as.double(ytest),
-                            labelts = as.integer(labelts),
-                            ytestpred = double(ntest),
+                            ndbigtree = ndbigtree,
+                            nodestatus = nodestatus,
+                            leftDaughter = leftDaughter,
+                            rightDaughter = rightDaughter,
+                            nodepred = nodepred,
+                            bestvar = bestvar,
+                            xbestsplit = xbestsplit,
+                            mse = mse,
+                            keep = keep,
+                            replace = replace,
+                            testdat = testdat,
+                            xts = xts,
+                            ntest = ntest,
+                            yts = yts,
+                            labelts = labelts,
+                            ytestpred = ytestpred,
                             proxts = proxts,
-                            msets = double(if (labelts) ntree else 1),
-                            coef = double(2),
-                            oob.times = integer(n),
-                            inbag = if (keep.inbag)
-                                matrix(integer(n * ntree), n) else integer(1),
+                            msets = msets,
+                            coef = coef,
+                            oob.times = oob.times,
+                            inbag = inbag,
                             DUP=FALSE,
                             PACKAGE="parallelRandomForest")[c(16:28, 36:41)]
                 ## Format the forest component, if present.
                 if (keep.forest) {
-                    max.nodes <- max(rfout$ndbigtree)
-                    rfout$nodestatus <-
-                        rfout$nodestatus[1:max.nodes, , drop=FALSE]
-                    rfout$bestvar <-
-                        rfout$bestvar[1:max.nodes, , drop=FALSE]
-                    rfout$nodepred <-
-                        rfout$nodepred[1:max.nodes, , drop=FALSE]
-                    rfout$xbestsplit <-
-                        rfout$xbestsplit[1:max.nodes, , drop=FALSE]
-                    rfout$leftDaughter <-
-                        rfout$leftDaughter[1:max.nodes, , drop=FALSE]
-                    rfout$rightDaughter <-
-                        rfout$rightDaughter[1:max.nodes, , drop=FALSE]
+                    max.nodes <- max(ndbigtree)
+                    nodestatus <-
+                        nodestatus[1:max.nodes, , drop=FALSE]
+                    bestvar <-
+                        bestvar[1:max.nodes, , drop=FALSE]
+                    nodepred <-
+                        nodepred[1:max.nodes, , drop=FALSE]
+                    xbestsplit <-
+                        xbestsplit[1:max.nodes, , drop=FALSE]
+                    leftDaughter <-
+                        leftDaughter[1:max.nodes, , drop=FALSE]
+                    rightDaughter <-
+                        rightDaughter[1:max.nodes, , drop=FALSE]
                 }
                 cl <- match.call()
                 cl[[1]] <- as.name("randomForest")
                 ## Make sure those obs. that have not been OOB get NA as prediction.
-                ypred <- rfout$ypred
-                if (any(rfout$oob.times < 1)) {
-                    ypred[rfout$oob.times == 0] <- NA
+                ypred <- ypred
+                if (any(oob.times < 1)) {
+                    ypred[oob.times == 0] <- NA
                 }
                 out <- list(call = cl,
                             type = "regression",
                             predicted = structure(ypred, names=x.row.names),
-                            mse = rfout$mse,
-                            rsq = 1 - rfout$mse / (var(y) * (n-1) / n),
-                            oob.times = rfout$oob.times,
-                            importance = if (importance) matrix(rfout$impout, p, 2,
+                            mse = mse,
+                            rsq = 1 - mse / (var(y) * (n-1) / n),
+                            oob.times = oob.times,
+                            importance = if (importance) matrix(impout, p, 2,
                                                                 dimnames=list(x.col.names,
                                                                               c("%IncMSE","IncNodePurity"))) else
-                                                                                  matrix(rfout$impout, ncol=1,
+                                                                                  matrix(impout, ncol=1,
                                                                                          dimnames=list(x.col.names, "IncNodePurity")),
-                            importanceSD=if (importance) rfout$impSD else NULL,
+                            importanceSD=if (importance) impSD else NULL,
                             localImportance = if (localImp)
-                                matrix(rfout$impmat, p, n, dimnames=list(x.col.names,
+                                matrix(impmat, p, n, dimnames=list(x.col.names,
                                                                          x.row.names)) else NULL,
-                            proximity = if (proximity) matrix(rfout$prox, n, n,
+                            proximity = if (proximity) matrix(prox, n, n,
                                                               dimnames = list(x.row.names, x.row.names)) else NULL,
                             ntree = ntree,
                             mtry = mtry,
                             forest = if (keep.forest)
-                                c(rfout[c("ndbigtree", "nodestatus", "leftDaughter",
-                                          "rightDaughter", "nodepred", "bestvar",
-                                          "xbestsplit")],
+                                c(c(ndbigtree, nodestatus, leftDaughter,
+                                          rightDaughter, nodepred, bestvar,
+                                          xbestsplit),
                                   list(ncat = ncat), list(nrnodes=max.nodes),
                                   list(ntree=ntree), list(xlevels=xlevels)) else NULL,
-                            coefs = if (corr.bias) rfout$coef else NULL,
+                            coefs = if (corr.bias) coef else NULL,
                             y = y,
                             test = if(testdat) {
-                                list(predicted = structure(rfout$ytestpred,
+                                list(predicted = structure(ytestpred,
                                                            names=xts.row.names),
-                                     mse = if(labelts) rfout$msets else NULL,
-                                     rsq = if(labelts) 1 - rfout$msets /
+                                     mse = if(labelts) msets else NULL,
+                                     rsq = if(labelts) 1 - msets /
                                          (var(ytest) * (n-1) / n) else NULL,
                                      proximity = if (proximity)
-                                         matrix(rfout$proxts / ntree, nrow = ntest,
+                                         matrix(proxts / ntree, nrow = ntest,
                                                 dimnames = list(xts.row.names,
                                                                 c(xts.row.names,
                                                                   x.row.names))) else NULL)
                             } else NULL,
                             inbag = if (keep.inbag)
-                                matrix(rfout$inbag, nrow(rfout$inbag),
+                                matrix(inbag, nrow(inbag),
                                        dimnames=list(x.row.names, NULL)) else NULL)
             }
             class(out) <- "randomForest"

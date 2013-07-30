@@ -13,10 +13,41 @@
 *******************************************************************/
 
 #include <R.h>
+#include <Rinternals.h>
+
 #include "rf.h"
 
 void simpleLinReg(int nsample, double *x, double *y, double *coef,
 		  double *mse, int *hasPred);
+
+
+SEXP callRegRF(SEXP x, SEXP y, SEXP xdim, SEXP sampsize,
+     SEXP nthsize, SEXP nrnodes, SEXP nTree, SEXP mtry, SEXP imp,
+     SEXP cat, SEXP maxcat, SEXP jprint, SEXP doProx, SEXP oobprox,
+           SEXP biasCorr, SEXP yptr, SEXP errimp, SEXP impmat,
+           SEXP impSD, SEXP prox, SEXP treeSize, SEXP nodestatus,
+           SEXP lDaughter, SEXP rDaughter, SEXP avnode, SEXP mbest,
+           SEXP upper, SEXP mse, SEXP keepf, SEXP replace,
+           SEXP testdat, SEXP xts, SEXP nts, SEXP yts, SEXP labelts,
+           SEXP yTestPred, SEXP proxts, SEXP msets, SEXP coef,
+           SEXP nout, SEXP inbag) {
+
+
+    regRF(REAL(x), REAL(y), INTEGER(xdim), INTEGER(sampsize),
+        INTEGER(nthsize), INTEGER(nrnodes), INTEGER(nTree), INTEGER(mtry), INTEGER(imp),
+        INTEGER(cat), INTEGER(maxcat), INTEGER(jprint), INTEGER(doProx), INTEGER(oobprox),
+        INTEGER(biasCorr), REAL(yptr), REAL(errimp), REAL(impmat),
+        REAL(impSD), REAL(prox), INTEGER(treeSize), INTEGER(nodestatus),
+        INTEGER(lDaughter), INTEGER(rDaughter), REAL(avnode), INTEGER(mbest),
+        REAL(upper), REAL(mse), INTEGER(keepf), INTEGER(replace),
+        INTEGER(testdat), REAL(xts), INTEGER(nts), REAL(yts), INTEGER(labelts),
+        REAL(yTestPred), REAL(proxts), REAL(msets), REAL(coef),
+        INTEGER(nout), INTEGER(inbag)
+    );
+
+    return R_NilValue;
+
+}
 
 
 void regRF(double *x, double *y, int *xdim, int *sampsize,
