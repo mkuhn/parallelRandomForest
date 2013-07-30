@@ -41,26 +41,26 @@ void classForest(int *mdim, int *ntest, int *nclass, int *maxcat,
                  int *keepPred, int *prox, double *proxmatrix, int *nodes);
 
 void regTree(double *x, double *y, int *sampling, int mdim, int full_nsample, int nsample,
-	     int *lDaughter, int *rDaughter, double *upper, double *avnode,
+             int *lDaughter, int *rDaughter, double *upper, double *avnode,
              int *nodestatus, int nrnodes, int *treeSize, int nthsize,
              int mtry, int *mbest, int *cat, double *tgini, int *varUsed);
 
 void findBestSplit(double *x, int *sampling, int *jdex, double *y, int mdim, int full_nsample, int nsample,
-		   int ndstart, int ndend, int *msplit, double *decsplit,
-		   double *ubest, int *ndendl, int *jstat, int mtry,
-		   double sumnode, int nodecnt, int *cat);
+                   int ndstart, int ndend, int *msplit, double *decsplit,
+                   double *ubest, int *ndendl, int *jstat, int mtry,
+                   double sumnode, int nodecnt, int *cat);
 
 void predictRegTree(double *x, int nsample, int mdim,
-		    int *lDaughter, int *rDaughter, int *nodestatus,
+                    int *lDaughter, int *rDaughter, int *nodestatus,
                     double *ypred, double *split, double *nodepred,
                     int *splitVar, int treeSize, int *cat, int maxcat,
                     int *nodex);
 
 void predictClassTree(double *x, int n, int mdim, int *treemap,
-		      int *nodestatus, double *xbestsplit,
-		      int *bestvar, int *nodeclass,
-		      int ndbigtree, int *cat, int nclass,
-		      int *jts, int *nodex, int maxcat);
+                      int *nodestatus, double *xbestsplit,
+                      int *bestvar, int *nodeclass,
+                      int ndbigtree, int *cat, int nclass,
+                      int *jts, int *nodex, int maxcat);
 
 unsigned int pack(int l, int *icat);
 void unpack(int nBits, unsigned int npack, int *icat);
@@ -69,30 +69,30 @@ void zeroInt(int *x, int length);
 void zeroDouble(double *x, int length);
 void createClass(double *x, int realN, int totalN, int mdim);
 void prepare(int *cl, const int nsample, const int nclass, const int ipi,
-	     double *pi, double *pid, int *nc, double *wtt);
+             double *pi, double *pid, int *nc, double *wtt);
 void makeA(double *x, const int mdim, const int nsample, int *cat, int *a,
            int *b);
 void modA(int *a, int *nuse, const int nsample, const int mdim, int *cat,
           const int maxcat, int *ncase, int *jin);
 void Xtranslate(double *x, int mdim, int nrnodes, int nsample,
-		int *bestvar, int *bestsplit, int *bestsplitnext,
-		double *xbestsplit, int *nodestatus, int *cat, int treeSize);
+                int *bestvar, int *bestsplit, int *bestsplitnext,
+                double *xbestsplit, int *nodestatus, int *cat, int treeSize);
 void permuteOOB(int m, double *x, int *in, int nsample, int mdim);
 void computeProximity(double *prox, int oobprox, int *node, int *inbag,
                       int *oobpair, int n);
 
 /* Template of Fortran subroutines to be called from the C wrapper */
 extern void F77_NAME(buildtree)(int *a, int *b, int *cl, int *cat,
-				int *maxcat, int *mdim, int *nsample,
-				int *nclass, int *treemap, int *bestvar,
-				int *bestsplit, int *bestsplitnext,
-				double *tgini, int *nodestatus, int *nodepop,
-				int *nodestart, double *classpop,
-				double *tclasspop, double *tclasscat,
-				int *ta, int *nrnodes, int *,
-				int *, int *, int *, int *, int *, int *,
-				double *, double *, double *,
-				int *, int *, int *);
+                                int *maxcat, int *mdim, int *nsample,
+                                int *nclass, int *treemap, int *bestvar,
+                                int *bestsplit, int *bestsplitnext,
+                                double *tgini, int *nodestatus, int *nodepop,
+                                int *nodestart, double *classpop,
+                                double *tclasspop, double *tclasscat,
+                                int *ta, int *nrnodes, int *,
+                                int *, int *, int *, int *, int *, int *,
+                                double *, double *, double *,
+                                int *, int *, int *);
 
 /* Node status */
 #define NODE_TERMINAL -1

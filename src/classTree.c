@@ -23,35 +23,35 @@ void classTree(int *a, int *b, int *class, int *cat, int mdim, int nsample,
                int *nodePop, int *nodeStart, double *tclassPop, int maxNodes,
                int nodeSize, int *ncase, int *inBag, int mTry, int *varUsed,
                int *nodeClass, int *treeSize, double *win) {
-/* Buildtree consists of repeated calls to two subroutines, Findbestsplit
-   and Movedata.  Findbestsplit does just that--it finds the best split of
-   the current node.  Movedata moves the data in the split node right and
-   left so that the data corresponding to each child node is contiguous.
-   The buildtree bookkeeping is different from that in Friedman's original
-   CART program.  ncur is the total number of nodes to date.
-   nodeStatus(k)=1 if the kth node has been split.  nodeStatus(k)=2 if the
-   node exists but has not yet been split, and =-1 of the node is terminal.
-   A node is terminal if its size is below a threshold value, or if it is
-   all one class, or if all the x-values are equal.  If the current node k
-   is split, then its children are numbered ncur+1 (left), and
-   ncur+2(right), ncur increases to ncur+2 and the next node to be split is
-   numbered k+1.  When no more nodes can be split, buildtree returns to the
-   main program.
-*/
-/*
-  integer a(mdim,nsample),cl(nsample),cat(mdim),
-  treemap(2,numNodes),bestvar(numNodes),
-          bestsplit(numNodes), nodeStatus(numNodes),ta(nsample),
-          nodePop(numNodes),nodeStart(numNodes),
-          bestsplitnext(numNodes),idmove(nsample),
-          ncase(nsample),parent(numNodes),b(mdim,nsample),
-          jin(nsample),iv(mred),nodeclass(numNodes),mind(mred)
+    /* Buildtree consists of repeated calls to two subroutines, Findbestsplit
+       and Movedata.  Findbestsplit does just that--it finds the best split of
+       the current node.  Movedata moves the data in the split node right and
+       left so that the data corresponding to each child node is contiguous.
+       The buildtree bookkeeping is different from that in Friedman's original
+       CART program.  ncur is the total number of nodes to date.
+       nodeStatus(k)=1 if the kth node has been split.  nodeStatus(k)=2 if the
+       node exists but has not yet been split, and =-1 of the node is terminal.
+       A node is terminal if its size is below a threshold value, or if it is
+       all one class, or if all the x-values are equal.  If the current node k
+       is split, then its children are numbered ncur+1 (left), and
+       ncur+2(right), ncur increases to ncur+2 and the next node to be split is
+       numbered k+1.  When no more nodes can be split, buildtree returns to the
+       main program.
+    */
+    /*
+      integer a(mdim,nsample),cl(nsample),cat(mdim),
+      treemap(2,numNodes),bestvar(numNodes),
+              bestsplit(numNodes), nodeStatus(numNodes),ta(nsample),
+              nodePop(numNodes),nodeStart(numNodes),
+              bestsplitnext(numNodes),idmove(nsample),
+              ncase(nsample),parent(numNodes),b(mdim,nsample),
+              jin(nsample),iv(mred),nodeclass(numNodes),mind(mred)
 
 
-      double precision tclasspop(nclass),classpop(nclass,numNodes),
-     1     tclasscat(nclass,32),win(nsample),wr(nclass),wc(nclass),
-     1     wl(nclass),tgini(mdim), xrand
- */
+          double precision tclasspop(nclass),classpop(nclass,numNodes),
+         1     tclasscat(nclass,32),win(nsample),wr(nclass),wc(nclass),
+         1     wl(nclass),tgini(mdim), xrand
+     */
     int msplit = 0, i, j;
     zeroInt(nodeStatus, maxNodes);
     zeroInt(nodeStart, maxNodes);
@@ -90,8 +90,8 @@ void classTree(int *a, int *b, int *class, int *cat, int mdim, int nsample,
                 bestsplit[i] = a[msplit - 1  + nbest * mdim];
                 bestsplitnext[i] = a[msplit - 1 + (nbest + 1) * mdim];
             } else {
-                  bestsplit[i] = nbest;
-                  bestsplitnext[i] = 0;
+                bestsplit[i] = nbest;
+                bestsplitnext[i] = 0;
             }
         }
         F77_CALL(movedata)(a, ta, mdim, nsample, ndstart, ndend, idmove,
@@ -153,11 +153,11 @@ void classTree(int *a, int *b, int *class, int *cat, int mdim, int nsample,
                 }
                 /* Break ties at random: */
                 if (classPop[j + k * nclass] == pp) {
-                	if (unif_rand() < 1.0 / ntie) {
-                		nodeClass[k] = j;
-                		pp = classPop[j + k * nclass];
-                	}
-                	ntie++;
+                    if (unif_rand() < 1.0 / ntie) {
+                        nodeClass[k] = j;
+                        pp = classPop[j + k * nclass];
+                    }
+                    ntie++;
                 }
             }
         }
@@ -173,26 +173,26 @@ void findBestSplit(int *a, double *b, int *class, int mDim, int nSample,
                    int *ncase, int *splitStatus, int *inBag, int mtry,
                    double *weight, double *wr, double *wc, double *wl,
                    int *currentNode, int *mind) {
-/*
-      subroutine findbestsplit(a, b, cl, mdim, nsample, nclass, cat,
-     1     maxcat, ndstart, ndend, tclasspop, tclasscat, msplit,
-     2     decsplit, nbest, ncase, jstat, jin, mtry, win, wr, wc, wl,
-     3     mred, kbuild, mind) */
-/*
-     For the best split, msplit is the variable split on. decsplit is the
-     dec. in impurity.  If msplit is numerical, nsplit is the case number
-     of value of msplit split on, and nsplitnext is the case number of the
-     next larger value of msplit.  If msplit is categorical, then nsplit is
-     the coding into an integer of the categories going left.
-*/
+    /*
+          subroutine findbestsplit(a, b, cl, mdim, nsample, nclass, cat,
+         1     maxcat, ndstart, ndend, tclasspop, tclasscat, msplit,
+         2     decsplit, nbest, ncase, jstat, jin, mtry, win, wr, wc, wl,
+         3     mred, kbuild, mind) */
+    /*
+         For the best split, msplit is the variable split on. decsplit is the
+         dec. in impurity.  If msplit is numerical, nsplit is the case number
+         of value of msplit split on, and nsplitnext is the case number of the
+         next larger value of msplit.  If msplit is categorical, then nsplit is
+         the coding into an integer of the categories going left.
+    */
 
 
     integer a(mdim,nsample), cl(nsample), cat(mdim),
-     1     ncase(nsample), b(mdim,nsample), jin(nsample), nn, j
-      double precision tclasspop(nclass), tclasscat(nclass,32), dn(32),
-     1     win(nsample), wr(nclass), wc(nclass), wl(nclass), xrand
-      integer mind(mred), ncmax, ncsplit,nhit
-        ncmax = 10;
+            1     ncase(nsample), b(mdim,nsample), jin(nsample), nn, j
+            double precision tclasspop(nclass), tclasscat(nclass,32), dn(32),
+            1     win(nsample), wr(nclass), wc(nclass), wl(nclass), xrand
+            integer mind(mred), ncmax, ncsplit,nhit
+            ncmax = 10;
     ncsplit = 512;
     /* compute initial values of numerator and denominator of Gini */
     parentNum = 0.0;
@@ -224,7 +224,7 @@ void findBestSplit(int *a, double *b, int *class, int mDim, int nSample,
             leftDen = 0.0;
             zeroDouble(wl, nClass);
             for (j = 0; j < nClass; ++j) wr[j] = classCount[j];
-	    ntie = 1;
+            ntie = 1;
             for (j = ndstart; j <= ndend - 1; ++j) {
                 nc = a[mvar, j-1];
                 u = weight[nc];
@@ -246,12 +246,12 @@ void findBestSplit(int *a, double *b, int *class, int mDim, int nSample,
                         }
                         /* Break ties at random: */
                         if (crit == critmax) {
-                        	if (unif_rand() < 1.0 / ntie) {
-                        		*bestSplit = j;
-                        		critmax = crit;
-                        		*splitVar = mvar;
-                        	}
-                        	ntie++;
+                            if (unif_rand() < 1.0 / ntie) {
+                                *bestSplit = j;
+                                critmax = crit;
+                                *splitVar = mvar;
+                            }
+                            ntie++;
                         }
                     }
                 }
@@ -296,19 +296,19 @@ void F77_NAME(catmax)(double *parentDen, double *tclasscat,
                       double *tclasspop, int *nclass, int *lcat,
                       unsigned int *ncatsp, double *critmax, int *nhit,
                       int *maxcat, int *ncmax, int *ncsplit) {
-/* This finds the best split of a categorical variable with lcat
-   categories and nclass classes, where tclasscat(j, k) is the number
-   of cases in class j with category value k. The method uses an
-   exhaustive search over all partitions of the category values if the
-   number of categories is 10 or fewer.  Otherwise ncsplit randomly
-   selected splits are tested and best used. */
+    /* This finds the best split of a categorical variable with lcat
+       categories and nclass classes, where tclasscat(j, k) is the number
+       of cases in class j with category value k. The method uses an
+       exhaustive search over all partitions of the category values if the
+       number of categories is 10 or fewer.  Otherwise ncsplit randomly
+       selected splits are tested and best used. */
     int j, k, n, icat[32], nsplit;
     double leftNum, leftDen, rightNum, decGini, *leftCatClassCount;
 
     leftCatClassCount = (double *) Calloc(*nclass, double);
     *nhit = 0;
     nsplit = *lcat > *ncmax ?
-        *ncsplit : (int) pow(2.0, (double) *lcat - 1) - 1;
+             *ncsplit : (int) pow(2.0, (double) *lcat - 1) - 1;
 
     for (n = 0; n < nsplit; ++n) {
         zeroInt(icat, 32);
@@ -366,7 +366,7 @@ void F77_NAME(catmaxb)(double *totalWt, double *tclasscat, double *classCount,
     *nhit = 0;
     for (i = 0; i < *nCat; ++i) {
         catProportion[i] = catCount[i] ?
-            tclasscat[i * *nclass] / catCount[i] : 0.0;
+                           tclasscat[i * *nclass] / catCount[i] : 0.0;
         kcat[i] = i + 1;
     }
     R_qsort_I(catProportion, kcat, 1, *nCat);
@@ -403,24 +403,24 @@ void F77_NAME(catmaxb)(double *totalWt, double *tclasscat, double *classCount,
         zeroInt(kcat, *nCat);
         for (i = 0; i < *nCat; ++i) {
             catProportion[i] = catCount[i] ?
-                tclasscat[i * *nclass] / catCount[i] : 0.0;
+                               tclasscat[i * *nclass] / catCount[i] : 0.0;
             kcat[i] = catProportion[i] < bestsplit ? 1 : 0;
-			/* Rprintf("%i ", kcat[i]); */
+            /* Rprintf("%i ", kcat[i]); */
         }
         *nbest = pack(*nCat, kcat);
-		/* Rprintf("\nnbest=%u\nnbest=%i\n", *nbest, *nbest); */
+        /* Rprintf("\nnbest=%u\nnbest=%i\n", *nbest, *nbest); */
     }
 }
 
 
 
 void predictClassTree(double *x, int n, int mdim, int *treemap,
-		      int *nodestatus, double *xbestsplit,
-		      int *bestvar, int *nodeclass,
-		      int treeSize, int *cat, int nclass,
-		      int *jts, int *nodex, int maxcat) {
+                      int *nodestatus, double *xbestsplit,
+                      int *bestvar, int *nodeclass,
+                      int treeSize, int *cat, int nclass,
+                      int *jts, int *nodex, int maxcat) {
     int m, i, j, k, *cbestsplit;
-	unsigned int npack;
+    unsigned int npack;
 
     /* decode the categorical splits */
     if (maxcat > 1) {
@@ -439,22 +439,22 @@ void predictClassTree(double *x, int n, int mdim, int *treemap,
         }
     }
     for (i = 0; i < n; ++i) {
-		k = 0;
-		while (nodestatus[k] != NODE_TERMINAL) {
+        k = 0;
+        while (nodestatus[k] != NODE_TERMINAL) {
             m = bestvar[k] - 1;
             if (cat[m] == 1) {
-				/* Split by a numerical predictor */
-				k = (x[m + i * mdim] <= xbestsplit[k]) ?
-					treemap[k * 2] - 1 : treemap[1 + k * 2] - 1;
-			} else {
-				/* Split by a categorical predictor */
-				k = cbestsplit[(int) x[m + i * mdim] - 1 + k * maxcat] ?
-					treemap[k * 2] - 1 : treemap[1 + k * 2] - 1;
-			}
-		}
-		/* Terminal node: assign class label */
-		jts[i] = nodeclass[k];
-		nodex[i] = k + 1;
+                /* Split by a numerical predictor */
+                k = (x[m + i * mdim] <= xbestsplit[k]) ?
+                    treemap[k * 2] - 1 : treemap[1 + k * 2] - 1;
+            } else {
+                /* Split by a categorical predictor */
+                k = cbestsplit[(int) x[m + i * mdim] - 1 + k * maxcat] ?
+                    treemap[k * 2] - 1 : treemap[1 + k * 2] - 1;
+            }
+        }
+        /* Terminal node: assign class label */
+        jts[i] = nodeclass[k];
+        nodex[i] = k + 1;
     }
     if (maxcat > 1) Free(cbestsplit);
 }

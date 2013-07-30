@@ -29,7 +29,7 @@ void regTree(double *x, double *y, int *sampling, int mdim, int full_nsample, in
              int *rDaughter,
              double *upper, double *avnode, int *nodestatus, int nrnodes,
              int *treeSize, int nthsize, int mtry, int *mbest, int *cat,
-	     double *tgini, int *varUsed) {
+             double *tgini, int *varUsed) {
     int i, j, k, m, ncur, *jdex, *nodestart, *nodepop;
     int ndstart, ndend, ndendl, nodecnt, jstat, msplit;
     double d, ss, av, decsplit, ubest, sumnode;
@@ -55,83 +55,83 @@ void regTree(double *x, double *y, int *sampling, int mdim, int full_nsample, in
     av = 0.0;
     ss = 0.0;
     for (i = 0; i < nsample; ++i) {
-		d = y[jdex[i] - 1];
-		ss += i * (av - d) * (av - d) / (i + 1);
-		av = (i * av + d) / (i + 1);
+        d = y[jdex[i] - 1];
+        ss += i * (av - d) * (av - d) / (i + 1);
+        av = (i * av + d) / (i + 1);
     }
     avnode[0] = av;
 
     /* start main loop */
     for (k = 0; k < nrnodes - 2; ++k) {
-		if (k > ncur || ncur >= nrnodes - 2) break;
-		/* skip if the node is not to be split */
-		if (nodestatus[k] != NODE_TOSPLIT) continue;
+        if (k > ncur || ncur >= nrnodes - 2) break;
+        /* skip if the node is not to be split */
+        if (nodestatus[k] != NODE_TOSPLIT) continue;
 
-		/* initialize for next call to findbestsplit */
-		ndstart = nodestart[k];
-		ndend = ndstart + nodepop[k] - 1;
-		nodecnt = nodepop[k];
-		sumnode = nodecnt * avnode[k];
-		jstat = 0;
-		decsplit = 0.0;
+        /* initialize for next call to findbestsplit */
+        ndstart = nodestart[k];
+        ndend = ndstart + nodepop[k] - 1;
+        nodecnt = nodepop[k];
+        sumnode = nodecnt * avnode[k];
+        jstat = 0;
+        decsplit = 0.0;
 
 
-		findBestSplit(x, sampling, jdex, y, mdim, full_nsample, nsample, ndstart, ndend, &msplit,
+        findBestSplit(x, sampling, jdex, y, mdim, full_nsample, nsample, ndstart, ndend, &msplit,
                       &decsplit, &ubest, &ndendl, &jstat, mtry, sumnode,
                       nodecnt, cat);
-		if (jstat == 1) {
-			/* Node is terminal: Mark it as such and move on to the next. */
-			nodestatus[k] = NODE_TERMINAL;
-			continue;
-		}
+        if (jstat == 1) {
+            /* Node is terminal: Mark it as such and move on to the next. */
+            nodestatus[k] = NODE_TERMINAL;
+            continue;
+        }
         /* Found the best split. */
         mbest[k] = msplit;
         varUsed[msplit - 1] = 1;
-		upper[k] = ubest;
-		tgini[msplit - 1] += decsplit;
-		nodestatus[k] = NODE_INTERIOR;
+        upper[k] = ubest;
+        tgini[msplit - 1] += decsplit;
+        nodestatus[k] = NODE_INTERIOR;
 
-		/* leftnode no.= ncur+1, rightnode no. = ncur+2. */
-		nodepop[ncur + 1] = ndendl - ndstart + 1;
-		nodepop[ncur + 2] = ndend - ndendl;
-		nodestart[ncur + 1] = ndstart;
-		nodestart[ncur + 2] = ndendl + 1;
+        /* leftnode no.= ncur+1, rightnode no. = ncur+2. */
+        nodepop[ncur + 1] = ndendl - ndstart + 1;
+        nodepop[ncur + 2] = ndend - ndendl;
+        nodestart[ncur + 1] = ndstart;
+        nodestart[ncur + 2] = ndendl + 1;
 
-		/* compute mean and sum of squares for the left daughter node */
-		av = 0.0;
-		ss = 0.0;
-		for (j = ndstart; j <= ndendl; ++j) {
-			d = y[jdex[j]-1];
-			m = j - ndstart;
-			ss += m * (av - d) * (av - d) / (m + 1);
-			av = (m * av + d) / (m+1);
-		}
-		avnode[ncur+1] = av;
-		nodestatus[ncur+1] = NODE_TOSPLIT;
-		if (nodepop[ncur + 1] <= nthsize) {
-			nodestatus[ncur + 1] = NODE_TERMINAL;
-		}
+        /* compute mean and sum of squares for the left daughter node */
+        av = 0.0;
+        ss = 0.0;
+        for (j = ndstart; j <= ndendl; ++j) {
+            d = y[jdex[j]-1];
+            m = j - ndstart;
+            ss += m * (av - d) * (av - d) / (m + 1);
+            av = (m * av + d) / (m+1);
+        }
+        avnode[ncur+1] = av;
+        nodestatus[ncur+1] = NODE_TOSPLIT;
+        if (nodepop[ncur + 1] <= nthsize) {
+            nodestatus[ncur + 1] = NODE_TERMINAL;
+        }
 
-		/* compute mean and sum of squares for the right daughter node */
-		av = 0.0;
-		ss = 0.0;
-		for (j = ndendl + 1; j <= ndend; ++j) {
-			d = y[jdex[j]-1];
-			m = j - (ndendl + 1);
-			ss += m * (av - d) * (av - d) / (m + 1);
-			av = (m * av + d) / (m + 1);
-		}
-		avnode[ncur + 2] = av;
-		nodestatus[ncur + 2] = NODE_TOSPLIT;
-		if (nodepop[ncur + 2] <= nthsize) {
-			nodestatus[ncur + 2] = NODE_TERMINAL;
-		}
+        /* compute mean and sum of squares for the right daughter node */
+        av = 0.0;
+        ss = 0.0;
+        for (j = ndendl + 1; j <= ndend; ++j) {
+            d = y[jdex[j]-1];
+            m = j - (ndendl + 1);
+            ss += m * (av - d) * (av - d) / (m + 1);
+            av = (m * av + d) / (m + 1);
+        }
+        avnode[ncur + 2] = av;
+        nodestatus[ncur + 2] = NODE_TOSPLIT;
+        if (nodepop[ncur + 2] <= nthsize) {
+            nodestatus[ncur + 2] = NODE_TERMINAL;
+        }
 
-		/* map the daughter nodes */
-		lDaughter[k] = ncur + 1 + 1;
-		rDaughter[k] = ncur + 2 + 1;
-		/* Augment the tree by two nodes. */
-		ncur += 2;
+        /* map the daughter nodes */
+        lDaughter[k] = ncur + 1 + 1;
+        rDaughter[k] = ncur + 2 + 1;
+        /* Augment the tree by two nodes. */
+        ncur += 2;
     }
     *treeSize = nrnodes;
     for (k = nrnodes - 1; k >= 0; --k) {
@@ -147,9 +147,9 @@ void regTree(double *x, double *y, int *sampling, int mdim, int full_nsample, in
 
 /*--------------------------------------------------------------*/
 void findBestSplit(double *x, int *sampling, int *jdex, double *y, int mdim, int full_nsample, int nsample,
-		   int ndstart, int ndend, int *msplit, double *decsplit,
-		   double *ubest, int *ndendl, int *jstat, int mtry,
-		   double sumnode, int nodecnt, int *cat) {
+                   int ndstart, int ndend, int *msplit, double *decsplit,
+                   double *ubest, int *ndendl, int *jstat, int mtry,
+                   double sumnode, int nodecnt, int *cat) {
     int last, ncat[32], icat[32], lc, nl, nr, npopl, npopr;
     int i, j, kv, l, *mind, *ncase;
     double *xt, *ut, *v, *yl, sumcat[32], avcat[32], tavcat[32], ubestt;
@@ -173,78 +173,78 @@ void findBestSplit(double *x, int *sampling, int *jdex, double *y, int mdim, int
 
     last = mdim - 1;
     for (i = 0; i < mtry; ++i) {
-		critvar = 0.0;
-		j = (int) (unif_rand() * (last+1));
-		kv = mind[j];
+        critvar = 0.0;
+        j = (int) (unif_rand() * (last+1));
+        kv = mind[j];
         swapInt(mind[j], mind[last]);
-		last--;
+        last--;
 
-		lc = cat[kv];
-		if (lc == 1) {
-			/* numeric variable */
-			for (j = ndstart; j <= ndend; ++j) {
-				xt[j] = x[full_nsample * kv + sampling[jdex[j] - 1]];
-				yl[j] = y[jdex[j] - 1];
-			}
-		} else {
-			/* categorical variable */
+        lc = cat[kv];
+        if (lc == 1) {
+            /* numeric variable */
+            for (j = ndstart; j <= ndend; ++j) {
+                xt[j] = x[full_nsample * kv + sampling[jdex[j] - 1]];
+                yl[j] = y[jdex[j] - 1];
+            }
+        } else {
+            /* categorical variable */
             zeroInt(ncat, 32);
-			zeroDouble(sumcat, 32);
-			for (j = ndstart; j <= ndend; ++j) {
-				l = (int) x[full_nsample * kv + sampling[jdex[j] - 1]];
-				sumcat[l - 1] += y[jdex[j] - 1];
-				ncat[l - 1] ++;
-			}
+            zeroDouble(sumcat, 32);
+            for (j = ndstart; j <= ndend; ++j) {
+                l = (int) x[full_nsample * kv + sampling[jdex[j] - 1]];
+                sumcat[l - 1] += y[jdex[j] - 1];
+                ncat[l - 1] ++;
+            }
             /* Compute means of Y by category. */
-			for (j = 0; j < lc; ++j) {
-				avcat[j] = ncat[j] ? sumcat[j] / ncat[j] : 0.0;
-			}
+            for (j = 0; j < lc; ++j) {
+                avcat[j] = ncat[j] ? sumcat[j] / ncat[j] : 0.0;
+            }
             /* Make the category mean the `pseudo' X data. */
-			for (j = 0; j < nsample; ++j) {
-				xt[j] = avcat[(int) x[full_nsample * kv + sampling[jdex[j] - 1]] - 1];
-				yl[j] = y[jdex[j] - 1];
-			}
-		}
+            for (j = 0; j < nsample; ++j) {
+                xt[j] = avcat[(int) x[full_nsample * kv + sampling[jdex[j] - 1]] - 1];
+                yl[j] = y[jdex[j] - 1];
+            }
+        }
         /* copy the x data in this node. */
-		for (j = ndstart; j <= ndend; ++j) v[j] = xt[j];
-		for (j = 1; j <= nsample; ++j) ncase[j - 1] = j;
-		R_qsort_I(v, ncase, ndstart + 1, ndend + 1);
-		if (v[ndstart] >= v[ndend]) continue;
-		/* ncase(n)=case number of v nth from bottom */
-		/* Start from the right and search to the left. */
-		critParent = sumnode * sumnode / nodecnt;
-		suml = 0.0;
-		sumr = sumnode;
-		npopl = 0;
-		npopr = nodecnt;
-		crit = 0.0;
-		/* Search through the "gaps" in the x-variable. */
-		for (j = ndstart; j <= ndend - 1; ++j) {
-			d = yl[ncase[j] - 1];
-			suml += d;
-			sumr -= d;
-			npopl++;
-			npopr--;
-			if (v[j] < v[j+1]) {
-				crit = (suml * suml / npopl) + (sumr * sumr / npopr) -
-					critParent;
-				if (crit > critvar) {
-					ubestt = (v[j] + v[j+1]) / 2.0;
-					critvar = crit;
-				}
-			}
-		}
-		if (critvar > critmax) {
-			*ubest = ubestt;
-			*msplit = kv + 1;
-			critmax = critvar;
-			for (j = ndstart; j <= ndend; ++j) {
-				ut[j] = xt[j];
-			}
-			if (cat[kv] > 1) {
-				for (j = 0; j < cat[kv]; ++j) tavcat[j] = avcat[j];
-			}
-		}
+        for (j = ndstart; j <= ndend; ++j) v[j] = xt[j];
+        for (j = 1; j <= nsample; ++j) ncase[j - 1] = j;
+        R_qsort_I(v, ncase, ndstart + 1, ndend + 1);
+        if (v[ndstart] >= v[ndend]) continue;
+        /* ncase(n)=case number of v nth from bottom */
+        /* Start from the right and search to the left. */
+        critParent = sumnode * sumnode / nodecnt;
+        suml = 0.0;
+        sumr = sumnode;
+        npopl = 0;
+        npopr = nodecnt;
+        crit = 0.0;
+        /* Search through the "gaps" in the x-variable. */
+        for (j = ndstart; j <= ndend - 1; ++j) {
+            d = yl[ncase[j] - 1];
+            suml += d;
+            sumr -= d;
+            npopl++;
+            npopr--;
+            if (v[j] < v[j+1]) {
+                crit = (suml * suml / npopl) + (sumr * sumr / npopr) -
+                       critParent;
+                if (crit > critvar) {
+                    ubestt = (v[j] + v[j+1]) / 2.0;
+                    critvar = crit;
+                }
+            }
+        }
+        if (critvar > critmax) {
+            *ubest = ubestt;
+            *msplit = kv + 1;
+            critmax = critvar;
+            for (j = ndstart; j <= ndend; ++j) {
+                ut[j] = xt[j];
+            }
+            if (cat[kv] > 1) {
+                for (j = 0; j < cat[kv]; ++j) tavcat[j] = avcat[j];
+            }
+        }
     }
     *decsplit = critmax;
 
@@ -265,7 +265,7 @@ void findBestSplit(double *x, int *sampling, int *jdex, double *y, int mdim, int
                 nr++;
                 ncase[nr - 1] = jdex[j];
             }
-	    }
+        }
         if (*ndendl >= ndend) *ndendl = ndend - 1;
         for (j = ndstart; j <= ndend; ++j) jdex[j] = ncase[j];
 
@@ -288,12 +288,12 @@ void findBestSplit(double *x, int *sampling, int *jdex, double *y, int mdim, int
 
 /*====================================================================*/
 void predictRegTree(double *x, int nsample, int mdim,
-		    int *lDaughter, int *rDaughter, int *nodestatus,
+                    int *lDaughter, int *rDaughter, int *nodestatus,
                     double *ypred, double *split, double *nodepred,
                     int *splitVar, int treeSize, int *cat, int maxcat,
                     int *nodex) {
     int i, j, k, m, *cbestsplit;
-	unsigned int npack;
+    unsigned int npack;
 
     /* decode the categorical splits */
     if (maxcat > 1) {
@@ -311,21 +311,21 @@ void predictRegTree(double *x, int nsample, int mdim,
     }
 
     for (i = 0; i < nsample; ++i) {
-	k = 0;
-	while (nodestatus[k] != NODE_TERMINAL) { /* go down the tree */
-	    m = splitVar[k] - 1;
-	    if (cat[m] == 1) {
-		k = (x[nsample*m + i] <= split[k]) ?
-		    lDaughter[k] - 1 : rDaughter[k] - 1;
-	    } else {
-	        /* Split by a categorical predictor */
-	        k = cbestsplit[(int) x[nsample*m + i] - 1 + k * maxcat] ?
+        k = 0;
+        while (nodestatus[k] != NODE_TERMINAL) { /* go down the tree */
+            m = splitVar[k] - 1;
+            if (cat[m] == 1) {
+                k = (x[nsample*m + i] <= split[k]) ?
                     lDaughter[k] - 1 : rDaughter[k] - 1;
-	    }
-	}
-	/* terminal node: assign prediction and move on to next */
-	ypred[i] = nodepred[k];
-	nodex[i] = k + 1;
+            } else {
+                /* Split by a categorical predictor */
+                k = cbestsplit[(int) x[nsample*m + i] - 1 + k * maxcat] ?
+                    lDaughter[k] - 1 : rDaughter[k] - 1;
+            }
+        }
+        /* terminal node: assign prediction and move on to next */
+        ypred[i] = nodepred[k];
+        nodex[i] = k + 1;
     }
     if (maxcat > 1) Free(cbestsplit);
 }

@@ -23,7 +23,7 @@ void zeroDouble(double *x, int length) {
 }
 
 void createClass(double *x, int realN, int totalN, int mdim) {
-/* Create the second class by bootstrapping each variable independently. */
+    /* Create the second class by bootstrapping each variable independently. */
     int i, j, k;
     for (i = realN; i < totalN; ++i) {
         for (j = 0; j < mdim; ++j) {
@@ -83,7 +83,7 @@ void makeA(double *x, const int mdim, const int nsample, int *cat, int *a,
                 a[i + j * mdim] = n1;
                 if (j == 0) b[i + (n1-1) * mdim] = 1;
                 b[i + (n2-1) * mdim] =  (v[j] < v[j + 1]) ?
-                    b[i + (n1-1) * mdim] + 1 : b[i + (n1-1) * mdim];
+                                        b[i + (n1-1) * mdim] + 1 : b[i + (n1-1) * mdim];
             }
             a[i + (nsample-1) * mdim] = index[nsample-1];
         } else { /* categorical predictor */
@@ -97,33 +97,33 @@ void makeA(double *x, const int mdim, const int nsample, int *cat, int *a,
 
 
 void modA(int *a, int *nuse, const int nsample, const int mdim,
-	  int *cat, const int maxcat, int *ncase, int *jin) {
+          int *cat, const int maxcat, int *ncase, int *jin) {
     int i, j, k, m, nt;
 
     *nuse = 0;
     for (i = 0; i < nsample; ++i) if (jin[i]) (*nuse)++;
 
     for (i = 0; i < mdim; ++i) {
-      k = 0;
-      nt = 0;
-      if (cat[i] == 1) {
-          for (j = 0; j < nsample; ++j) {
-              if (jin[a[i + k * mdim] - 1]) {
-                  a[i + nt * mdim] = a[i + k * mdim];
-                  k++;
-              } else {
-                  for (m = 0; m < nsample - k; ++m) {
-                      if (jin[a[i + (k + m) * mdim] - 1]) {
-                          a[i + nt * mdim] = a[i + (k + m) * mdim];
-                          k += m + 1;
-                          break;
-                      }
-                  }
-              }
-              nt++;
-              if (nt >= *nuse) break;
-          }
-      }
+        k = 0;
+        nt = 0;
+        if (cat[i] == 1) {
+            for (j = 0; j < nsample; ++j) {
+                if (jin[a[i + k * mdim] - 1]) {
+                    a[i + nt * mdim] = a[i + k * mdim];
+                    k++;
+                } else {
+                    for (m = 0; m < nsample - k; ++m) {
+                        if (jin[a[i + (k + m) * mdim] - 1]) {
+                            a[i + nt * mdim] = a[i + (k + m) * mdim];
+                            k += m + 1;
+                            break;
+                        }
+                    }
+                }
+                nt++;
+                if (nt >= *nuse) break;
+            }
+        }
     }
     if (maxcat > 1) {
         k = 0;
@@ -148,47 +148,47 @@ void modA(int *a, int *nuse, const int nsample, const int mdim,
 }
 
 void Xtranslate(double *x, int mdim, int nrnodes, int nsample,
-		int *bestvar, int *bestsplit, int *bestsplitnext,
-		double *xbestsplit, int *nodestatus, int *cat, int treeSize) {
-/*
- this subroutine takes the splits on numerical variables and translates them
- back into x-values.  It also unpacks each categorical split into a
- 32-dimensional vector with components of zero or one--a one indicates that
- the corresponding category goes left in the split.
-*/
+                int *bestvar, int *bestsplit, int *bestsplitnext,
+                double *xbestsplit, int *nodestatus, int *cat, int treeSize) {
+    /*
+     this subroutine takes the splits on numerical variables and translates them
+     back into x-values.  It also unpacks each categorical split into a
+     32-dimensional vector with components of zero or one--a one indicates that
+     the corresponding category goes left in the split.
+    */
 
     int i, m;
 
     for (i = 0; i < treeSize; ++i) {
-	if (nodestatus[i] == 1) {
-	    m = bestvar[i] - 1;
-	    if (cat[m] == 1) {
-		xbestsplit[i] = 0.5 * (x[m + (bestsplit[i] - 1) * mdim] +
-				       x[m + (bestsplitnext[i] - 1) * mdim]);
-	    } else {
-		xbestsplit[i] = (double) bestsplit[i];
-	    }
-	}
+        if (nodestatus[i] == 1) {
+            m = bestvar[i] - 1;
+            if (cat[m] == 1) {
+                xbestsplit[i] = 0.5 * (x[m + (bestsplit[i] - 1) * mdim] +
+                                       x[m + (bestsplitnext[i] - 1) * mdim]);
+            } else {
+                xbestsplit[i] = (double) bestsplit[i];
+            }
+        }
     }
 }
 
 void permuteOOB(int m, double *x, int *in, int nsample, int mdim) {
-/* Permute the OOB part of a variable in x.
- * Argument:
- *   m: the variable to be permuted
- *   x: the data matrix (variables in rows)
- *   in: vector indicating which case is OOB
- *   nsample: number of cases in the data
- *   mdim: number of variables in the data
- */
+    /* Permute the OOB part of a variable in x.
+     * Argument:
+     *   m: the variable to be permuted
+     *   x: the data matrix (variables in rows)
+     *   in: vector indicating which case is OOB
+     *   nsample: number of cases in the data
+     *   mdim: number of variables in the data
+     */
     double *tp, tmp;
     int i, last, k, nOOB = 0;
 
     tp = (double *) Calloc(nsample, double);
 
     for (i = 0; i < nsample; ++i) {
-		/* make a copy of the OOB part of the data into tp (for permuting) */
-		if (in[i] == 0) {
+        /* make a copy of the OOB part of the data into tp (for permuting) */
+        if (in[i] == 0) {
             tp[nOOB] = x[m + i*mdim];
             nOOB++;
         }
@@ -196,20 +196,20 @@ void permuteOOB(int m, double *x, int *in, int nsample, int mdim) {
     /* Permute tp */
     last = nOOB;
     for (i = 0; i < nOOB; ++i) {
-		k = (int) last * unif_rand();
-		tmp = tp[last - 1];
-		tp[last - 1] = tp[k];
-		tp[k] = tmp;
-		last--;
+        k = (int) last * unif_rand();
+        tmp = tp[last - 1];
+        tp[last - 1] = tp[k];
+        tp[k] = tmp;
+        last--;
     }
 
     /* Copy the permuted OOB data back into x. */
     nOOB = 0;
     for (i = 0; i < nsample; ++i) {
-		if (in[i] == 0) {
+        if (in[i] == 0) {
             x[m + i*mdim] = tp[nOOB];
             nOOB++;
-		}
+        }
     }
     Free(tp);
 }
@@ -217,14 +217,14 @@ void permuteOOB(int m, double *x, int *in, int nsample, int mdim) {
 /* Compute proximity. */
 void computeProximity(double *prox, int oobprox, int *node, int *inbag,
                       int *oobpair, int n) {
-/* Accumulate the number of times a pair of points fall in the same node.
-   prox:    n x n proximity matrix
-   oobprox: should the accumulation only count OOB cases? (0=no, 1=yes)
-   node:    vector of terminal node labels
-   inbag:   indicator of whether a case is in-bag
-   oobpair: matrix to accumulate the number of times a pair is OOB together
-   n:       total number of cases
-*/
+    /* Accumulate the number of times a pair of points fall in the same node.
+       prox:    n x n proximity matrix
+       oobprox: should the accumulation only count OOB cases? (0=no, 1=yes)
+       node:    vector of terminal node labels
+       inbag:   indicator of whether a case is in-bag
+       oobpair: matrix to accumulate the number of times a pair is OOB together
+       n:       total number of cases
+    */
     int i, j;
     for (i = 0; i < n; ++i) {
         for (j = i+1; j < n; ++j) {
@@ -249,21 +249,21 @@ void computeProximity(double *prox, int oobprox, int *node, int *inbag,
 
 unsigned int pack(int nBits, int *bits) {
     int i = nBits;
-	unsigned int pack = 0;
+    unsigned int pack = 0;
     while (--i >= 0) pack += bits[i] << i;
     return(pack);
 }
 
 void unpack(int nBits, unsigned int pack, int *bits) {
-/* pack is a 4-byte integer.  The sub. returns icat, an integer 
-   array of zeroes and ones corresponding to the coefficients 
-   in the binary expansion of pack. */
+    /* pack is a 4-byte integer.  The sub. returns icat, an integer
+       array of zeroes and ones corresponding to the coefficients
+       in the binary expansion of pack. */
     int i;
     for (i = 0; i < nBits; pack >>= 1, ++i) bits[i] = pack & 1;
 }
 
 void F77_NAME(unpack)(int *nBits, unsigned int *pack, int *bits) {
-	unpack(*nBits, *pack, bits);
+    unpack(*nBits, *pack, bits);
 }
 
 #ifdef OLD
@@ -275,23 +275,23 @@ double oldpack(int l, int *icat) {
     double pack = 0.0;
 
     for (k = 0; k < l; ++k) {
-	if (icat[k]) pack += R_pow_di(2.0, k);
+        if (icat[k]) pack += R_pow_di(2.0, k);
     }
     return(pack);
 }
 
 
 void oldunpack(int l, int npack, int *icat) {
-/*
- * npack is a long integer.  The sub. returns icat, an integer of zeroes and
- * ones corresponding to the coefficients in the binary expansion of npack.
- */
+    /*
+     * npack is a long integer.  The sub. returns icat, an integer of zeroes and
+     * ones corresponding to the coefficients in the binary expansion of npack.
+     */
     int i;
     zeroInt(icat, 32);
     icat[0] = npack % 2;
     for (i = 1; i < l; ++i) {
-	npack = (npack - icat[i-1]) / 2;
-	icat[i] = npack % 2;
+        npack = (npack - icat[i-1]) / 2;
+        icat[i] = npack % 2;
     }
 }
 
