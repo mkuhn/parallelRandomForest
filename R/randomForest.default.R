@@ -15,7 +15,6 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
              keep.forest=!is.null(y) && is.null(xtest), corr.bias=FALSE,
              keep.inbag=FALSE, nthreads=1, skip.checks = TRUE, ...) {
 
-
         if (storage.mode(x) != "raw") {
            stop("Error: need matrix of storage mode raw.")
         }
@@ -171,7 +170,6 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
             impout <- double(p)
             impSD <- double(1)
         }
-
 
         nsample <- if (addclass) 2 * n else n
         Stratify <- length(sampsize) > 1

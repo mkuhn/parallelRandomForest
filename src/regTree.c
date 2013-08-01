@@ -25,7 +25,7 @@
 #include <R.h>
 #include "rf.h"
 
-void regTree(unsigned char *x, double *y, int *sampling, int mdim, int full_nsample, int nsample, int *lDaughter,
+void regTree(unsigned char *x, double *y, int *sampling, int mdim, size_t full_nsample, int nsample, int *lDaughter,
              int *rDaughter,
              unsigned char *upper, double *avnode, int *nodestatus, int nrnodes,
              int *treeSize, int nthsize, int mtry, int *mbest, int *cat,
@@ -146,12 +146,13 @@ void regTree(unsigned char *x, double *y, int *sampling, int mdim, int full_nsam
 }
 
 /*--------------------------------------------------------------*/
-void findBestSplit(unsigned char *x, int *sampling, int *jdex, double *y, int mdim, int full_nsample, int nsample,
+void findBestSplit(unsigned char *x, int *sampling, int *jdex, double *y, int mdim, size_t full_nsample, int nsample,
                    int ndstart, int ndend, int *msplit, double *decsplit,
                    double *ubest, int *ndendl, int *jstat, int mtry,
                    double sumnode, int nodecnt, int *cat) {
     int last, ncat[32], icat[32], lc, nl, nr, npopl, npopr;
-    int i, j, kv, l, *mind, *ncase;
+    size_t i, j, kv, l;
+    int *mind, *ncase;
     unsigned char *xt;
     double *ut, *yl, *v, sumcat[32], avcat[32], tavcat[32], ubestt;
     double crit, critmax, critvar, suml, sumr, d, critParent;
@@ -293,7 +294,8 @@ void predictRegTree(unsigned char *x, int nsample, int mdim,
                     double *ypred, unsigned char *split, double *nodepred,
                     int *splitVar, int treeSize, int *cat, int maxcat,
                     int *nodex) {
-    int i, j, k, m, *cbestsplit;
+    size_t i, j, k, m;
+    int *cbestsplit;
     unsigned int npack;
 
     /* decode the categorical splits */

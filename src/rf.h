@@ -40,12 +40,12 @@ void classForest(int *mdim, int *ntest, int *nclass, int *maxcat,
                  int *jet, int *bestvar, int *nodexts, int *ndbigtree,
                  int *keepPred, int *prox, double *proxmatrix, int *nodes);
 
-void regTree(unsigned char *x, double *y, int *sampling, int mdim, int full_nsample, int nsample,
+void regTree(unsigned char *x, double *y, int *sampling, int mdim, size_t full_nsample, int nsample,
              int *lDaughter, int *rDaughter, unsigned char *upper, double *avnode,
              int *nodestatus, int nrnodes, int *treeSize, int nthsize,
              int mtry, int *mbest, int *cat, double *tgini, int *varUsed);
 
-void findBestSplit(unsigned char *x, int *sampling, int *jdex, double *y, int mdim, int full_nsample, int nsample,
+void findBestSplit(unsigned char *x, int *sampling, int *jdex, double *y, int mdim, size_t full_nsample, int nsample,
                    int ndstart, int ndend, int *msplit, double *decsplit,
                    double *ubest, int *ndendl, int *jstat, int mtry,
                    double sumnode, int nodecnt, int *cat);
