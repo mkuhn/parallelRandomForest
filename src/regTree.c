@@ -152,19 +152,16 @@ void findBestSplit(unsigned char *x, int *sampling, int *jdex, double *y, int md
                    double sumnode, int nodecnt, int *cat) {
     int last, ncat[32], icat[32], lc, nl, nr, npopl, npopr, last_npopl;
     size_t i, j, kv, l;
-    int *split_nodes;
-    double *split_sum;
     int *mind, *ncase;
+    unsigned char *xt;
     unsigned char max_x, split, current_x, last_split;
-    double *ut, sumcat[32], avcat[32], tavcat[32], ubestt;
-    double crit, critmax, critvar, suml, sumr, d, critParent, current_y;
+    double *ut, *yl, sumcat[32], avcat[32], tavcat[32], ubestt;
+    double crit, critmax, critvar, suml, sumr, d, critParent;
 
     ut = (double *) Calloc(nsample, double);
+    xt = (unsigned char *) Calloc(nsample, unsigned char);
+    yl = (double *) Calloc(nsample, double);
     mind  = (int *) Calloc(mdim, int);
-
-    split_sum = (double *) Calloc(256, double);
-    split_nodes = (int *) Calloc(256, int);
-
     zeroDouble(avcat, 32);
     zeroDouble(tavcat, 32);
 
@@ -182,19 +179,13 @@ void findBestSplit(unsigned char *x, int *sampling, int *jdex, double *y, int md
         kv = mind[j];
         swapInt(mind[j], mind[last]);
         last--;
-        max_x = 0;
-
-        zeroDouble(split_sum, 256);
-        zeroInt(split_nodes, 256);
 
         lc = cat[kv];
         if (lc == 1) {
             /* numeric variable */
             for (j = ndstart; j <= ndend; ++j) {
-                current_x = x[full_nsample * kv + sampling[jdex[j] - 1]];
-                split_sum[current_x] += y[jdex[j] - 1];
-                ++split_nodes[current_x];
-                if (current_x > max_x) max_x = current_x;
+                xt[j] = x[full_nsample * kv + sampling[jdex[j] - 1]];
+                yl[j] = y[jdex[j] - 1];
             }
         } else {
             /* categorical variable */
@@ -211,22 +202,36 @@ void findBestSplit(unsigned char *x, int *sampling, int *jdex, double *y, int md
             }
             /* Make the category mean the `pseudo' X data. */
             for (j = 0; j < nsample; ++j) {
-                current_x = avcat[(int) x[full_nsample * kv + sampling[jdex[j] - 1]] - 1];
-                split_sum[current_x] += y[jdex[j] - 1];
-                ++split_nodes[current_x];
-                if (current_x > max_x) max_x = current_x;
+                xt[j] = avcat[(int) x[full_nsample * kv + sampling[jdex[j] - 1]] - 1];
+                yl[j] = y[jdex[j] - 1];
             }
         }
-
-        if (max_x == 0) continue;
 
         /* changed implementation: rely on the fact that we have only relatively few values (e.g. 0/1/2),
            so don't sort the values but rather scan through each split
          */
         critParent = sumnode * sumnode / nodecnt;
-        suml = split_sum[0];
-        npopl = split_nodes[0];
+        suml = 0.0;
+        sumr = sumnode;
+        npopl = 0;
+        npopr = nodecnt;
         crit = 0.0;
+        max_x = 0;
+
+        /* gather all cases where x is 0 */
+        for (j = ndstart; j <= ndend; ++j) {
+            current_x = xt[j];
+            if (current_x == 0) {
+                d = yl[j];
+                suml += d;
+                sumr -= d;
+                npopl++;
+                npopr--;
+            }
+            else if (current_x > max_x) max_x = current_x;
+        }
+
+        if (max_x == 0) continue;
 
         last_split = 0;
 
@@ -234,16 +239,21 @@ void findBestSplit(unsigned char *x, int *sampling, int *jdex, double *y, int md
         for (split = 1; split <= max_x; split++) {
 
             /* compute effect of split here, but don't split now as we don't know the next potential value */
-            sumr = sumnode - suml;
-            npopr = nodecnt - npopl;
             crit = (suml * suml / npopl) + (sumr * sumr / npopr) - critParent;
 
             /* we don't need to compute anything for the last split, as this would only set "sumr" to 0 */
             if (split < max_x) {
                 last_npopl = npopl;
 
-                npopl += split_nodes[split];
-                suml += split_sum[split];
+                for (j = ndstart; j <= ndend; ++j) {
+                    if (xt[j] == split) {
+                        d = yl[j];
+                        suml += d;
+                        sumr -= d;
+                        npopl++;
+                        npopr--;
+                    }
+                }
 
                 if (last_npopl == npopl) continue;
             }
@@ -261,16 +271,9 @@ void findBestSplit(unsigned char *x, int *sampling, int *jdex, double *y, int md
             *ubest = ubestt;
             *msplit = kv + 1;
             critmax = critvar;
-            if (lc == 1) {
-                for (j = ndstart; j <= ndend; ++j) {
-                    ut[j] = x[full_nsample * kv + sampling[jdex[j] - 1]];
-                }
-            } else {
-                for (j = ndstart; j <= ndend; ++j) {
-                    ut[j] = avcat[(int) x[full_nsample * kv + sampling[jdex[j] - 1]] - 1];
-                }
+            for (j = ndstart; j <= ndend; ++j) {
+                ut[j] = xt[j];
             }
-
             if (cat[kv] > 1) {
                 for (j = 0; j < cat[kv]; ++j) tavcat[j] = avcat[j];
             }
@@ -310,9 +313,9 @@ void findBestSplit(unsigned char *x, int *sampling, int *jdex, double *y, int md
         Free(ncase);
     } else *jstat = 1;
 
-    Free(split_nodes);
-    Free(split_sum);
     Free(mind);
+    Free(yl);
+    Free(xt);
     Free(ut);
 }
 
