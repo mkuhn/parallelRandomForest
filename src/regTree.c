@@ -247,7 +247,7 @@ void findBestSplit(unsigned char *x, int *sampling, int *jdex, double *y, int md
                 last_npopl = npopl;
 
                 for (j = ndstart; j <= ndend; ++j) {
-                    flag = xt[j] == 0;
+                    flag = xt[j] == split;
                     suml += flag * yl[j];
                     npopl += flag;
                 }
