@@ -221,7 +221,6 @@ void findBestSplit(unsigned char *x, int *sampling, int *jdex, double *y, int md
         /* gather all cases where x is 0 */
         for (j = ndstart; j <= ndend; ++j) {
             current_x = xt[j];
-            if (current_x > max_x) max_x = current_x;
             if (current_x == 0) {
                 d = yl[j];
                 suml += d;
@@ -229,6 +228,7 @@ void findBestSplit(unsigned char *x, int *sampling, int *jdex, double *y, int md
                 npopl++;
                 npopr--;
             }
+            else if (current_x > max_x) max_x = current_x;
         }
 
         if (max_x == 0) continue;
