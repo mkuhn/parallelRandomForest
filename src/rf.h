@@ -65,6 +65,7 @@ void predictClassTree(double *x, int n, int mdim, int *treemap,
 unsigned int pack(int l, int *icat);
 void unpack(int nBits, unsigned int npack, int *icat);
 
+
 void zeroInt(int *x, int length);
 void zeroDouble(double *x, int length);
 void createClass(double *x, int realN, int totalN, int mdim);
