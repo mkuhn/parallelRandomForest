@@ -150,19 +150,18 @@ void findBestSplit(unsigned char *x, int *sampling, int *jdex, double *y, int md
                    int ndstart, int ndend, int *msplit, double *decsplit,
                    double *ubest, int *ndendl, int *jstat, int mtry,
                    double sumnode, int nodecnt, int *cat) {
-    int last, ncat[32], icat[32], lc, nl, nr, npopl, npopr;
+    int last, ncat[32], icat[32], lc, nl, nr, npopl, npopr, last_npopl;
     size_t i, j, kv, l;
     int *mind, *ncase;
     unsigned char *xt;
-    double *ut, *yl, *v, sumcat[32], avcat[32], tavcat[32], ubestt;
+    unsigned char max_x, split, current_x, last_split;
+    double *ut, *yl, sumcat[32], avcat[32], tavcat[32], ubestt;
     double crit, critmax, critvar, suml, sumr, d, critParent;
 
     ut = (double *) Calloc(nsample, double);
     xt = (unsigned char *) Calloc(nsample, unsigned char);
-    v  = (double *) Calloc(nsample, double);
     yl = (double *) Calloc(nsample, double);
     mind  = (int *) Calloc(mdim, int);
-    ncase = (int *) Calloc(nsample, int);
     zeroDouble(avcat, 32);
     zeroDouble(tavcat, 32);
 
@@ -207,35 +206,67 @@ void findBestSplit(unsigned char *x, int *sampling, int *jdex, double *y, int md
                 yl[j] = y[jdex[j] - 1];
             }
         }
-        /* copy the x data in this node. */
-        for (j = ndstart; j <= ndend; ++j) v[j] = xt[j];
-        for (j = 1; j <= nsample; ++j) ncase[j - 1] = j;
-        R_qsort_I(v, ncase, ndstart + 1, ndend + 1);
-        if (v[ndstart] >= v[ndend]) continue;
-        /* ncase(n)=case number of v nth from bottom */
-        /* Start from the right and search to the left. */
+
+        /* changed implementation: rely on the fact that we have only relatively few values (e.g. 0/1/2),
+           so don't sort the values but rather scan through each split
+         */
         critParent = sumnode * sumnode / nodecnt;
         suml = 0.0;
         sumr = sumnode;
         npopl = 0;
         npopr = nodecnt;
         crit = 0.0;
-        /* Search through the "gaps" in the x-variable. */
-        for (j = ndstart; j <= ndend - 1; ++j) {
-            d = yl[ncase[j] - 1];
-            suml += d;
-            sumr -= d;
-            npopl++;
-            npopr--;
-            if (v[j] < v[j+1]) {
-                crit = (suml * suml / npopl) + (sumr * sumr / npopr) -
-                       critParent;
-                if (crit > critvar) {
-                    ubestt = (v[j] + v[j+1]) / 2.0;
-                    critvar = crit;
-                }
+        max_x = 0;
+
+        /* gather all cases where x is 0 */
+        for (j = ndstart; j <= ndend; ++j) {
+            current_x = xt[j];
+            if (current_x > max_x) max_x = current_x;
+            if (current_x == 0) {
+                d = yl[j];
+                suml += d;
+                sumr -= d;
+                npopl++;
+                npopr--;
             }
         }
+
+        if (max_x == 0) continue;
+
+        last_split = 0;
+
+        /* try all possible splits */
+        for (split = 1; split <= max_x; split++) {
+
+            /* compute effect of split here, but don't split now as we don't know the next potential value */
+            crit = (suml * suml / npopl) + (sumr * sumr / npopr) - critParent;
+
+            /* we don't need to compute anything for the last split, as this would only set "sumr" to 0 */
+            if (split < max_x) {
+                last_npopl = npopl;
+
+                for (j = ndstart; j <= ndend; ++j) {
+                    if (xt[j] == split) {
+                        d = yl[j];
+                        suml += d;
+                        sumr -= d;
+                        npopl++;
+                        npopr--;
+                    }
+                }
+
+                if (last_npopl == npopl) continue;
+            }
+
+            if (crit > critvar) {
+                /* be careful not to cause an overflow as split and last_split are chars */
+                ubestt = split / 2.0 + last_split / 2.0;
+                critvar = crit;
+            }
+
+            last_split = split;
+        }
+
         if (critvar > critmax) {
             *ubest = ubestt;
             *msplit = kv + 1;
@@ -252,6 +283,7 @@ void findBestSplit(unsigned char *x, int *sampling, int *jdex, double *y, int md
 
     /* If best split can not be found, set to terminal node and return. */
     if (*msplit != -1) {
+        ncase = (int *) Calloc(nsample, int);
         nl = ndstart;
         for (j = ndstart; j <= ndend; ++j) {
             if (ut[j] <= *ubest) {
@@ -278,11 +310,10 @@ void findBestSplit(unsigned char *x, int *sampling, int *jdex, double *y, int md
             }
             *ubest = pack(lc, icat);
         }
+        Free(ncase);
     } else *jstat = 1;
 
-    Free(ncase);
     Free(mind);
-    Free(v);
     Free(yl);
     Free(xt);
     Free(ut);
