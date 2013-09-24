@@ -341,7 +341,7 @@ void regRF(unsigned char *x, double *y, int *xdim, int *sampsize,
     for (m = 0; m < mdim; ++m) tgini[m] /= *nTree;
 }
 
-SEXP callRegRF(SEXP x, SEXP y, SEXP xdim, SEXP sampsize,
+extern "C" SEXP callRegRF(SEXP x, SEXP y, SEXP xdim, SEXP sampsize,
                SEXP nthsize, SEXP nrnodes, SEXP nTree, SEXP mtry, SEXP imp,
                SEXP cat, SEXP maxcat, SEXP jprint, SEXP doProx, SEXP oobprox,
                SEXP biasCorr, SEXP yptr, SEXP errimp, SEXP impmat,
@@ -423,7 +423,7 @@ void regForest(unsigned char *x, double *ypred, int *mdim, int *n,
     }
 }
 
-SEXP callRegForest(SEXP x, SEXP ypred, SEXP mdim, SEXP n,
+extern "C" SEXP callRegForest(SEXP x, SEXP ypred, SEXP mdim, SEXP n,
                SEXP ntree, SEXP lDaughter, SEXP rDaughter,
                SEXP nodestatus, SEXP nrnodes, SEXP xsplit,
                SEXP avnodes, SEXP mbest, SEXP treeSize, SEXP cat,

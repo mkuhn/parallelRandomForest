@@ -37,7 +37,7 @@ extern "C" void F77_SUB(rrand)(double *r) {
     *r = unif_rand();
 }
 
-void classRF(double *x, int *dimx, int *cl, int *ncl, int *cat, int *maxcat,
+extern "C" void classRF(double *x, int *dimx, int *cl, int *ncl, int *cat, int *maxcat,
              int *sampsize, int *strata, int *Options, int *ntree, int *nvar,
              int *ipi, double *classwt, double *cut, int *nodesize,
              int *outcl, int *counttr, double *prox,
@@ -542,7 +542,7 @@ void classRF(double *x, int *dimx, int *cl, int *ncl, int *cat, int *maxcat,
 }
 
 
-void classForest(int *mdim, int *ntest, int *nclass, int *maxcat,
+extern "C" void classForest(int *mdim, int *ntest, int *nclass, int *maxcat,
                  int *nrnodes, int *ntree, double *x, double *xbestsplit,
                  double *pid, double *cutoff, double *countts, int *treemap,
                  int *nodestatus, int *cat, int *nodeclass, int *jts,
