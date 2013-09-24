@@ -33,7 +33,7 @@ void TestSetError(double *countts, int *jts, int *clts, int *jet, int ntest,
                   int labelts, int *nclts, double *cutoff);
 
 /*  Define the R RNG for use from Fortran. */
-void F77_SUB(rrand)(double *r) {
+extern "C" void F77_SUB(rrand)(double *r) {
     *r = unif_rand();
 }
 

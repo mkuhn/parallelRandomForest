@@ -83,7 +83,7 @@ void computeProximity(double *prox, int oobprox, int *node, int *inbag,
                       int *oobpair, int n);
 
 /* Template of Fortran subroutines to be called from the C wrapper */
-extern void F77_NAME(buildtree)(int *a, int *b, int *cl, int *cat,
+extern "C" void F77_NAME(buildtree)(int *a, int *b, int *cl, int *cat,
                                 int *maxcat, int *mdim, int *nsample,
                                 int *nclass, int *treemap, int *bestvar,
                                 int *bestsplit, int *bestsplitnext,
