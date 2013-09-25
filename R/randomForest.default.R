@@ -411,7 +411,7 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
                 oob.times <- integer(n)
                 inbag <- if (keep.inbag) matrix(integer(n * ntree), n) else integer(1)
 
-                .Call("callRegRF",
+                .Call("callRegRFRaw",
                             x,
                             as.double(y),
                             as.integer(c(n, p)),

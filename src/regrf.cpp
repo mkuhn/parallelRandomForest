@@ -342,7 +342,7 @@ template <typename T> void regRF(T *x, double *y, int *xdim, int *sampsize,
     for (m = 0; m < mdim; ++m) tgini[m] /= *nTree;
 }
 
-extern "C" SEXP callRegRF(SEXP x, SEXP y, SEXP xdim, SEXP sampsize,
+extern "C" SEXP callRegRFRaw(SEXP x, SEXP y, SEXP xdim, SEXP sampsize,
                SEXP nthsize, SEXP nrnodes, SEXP nTree, SEXP mtry, SEXP imp,
                SEXP cat, SEXP maxcat, SEXP jprint, SEXP doProx, SEXP oobprox,
                SEXP biasCorr, SEXP yptr, SEXP errimp, SEXP impmat,
@@ -362,6 +362,34 @@ extern "C" SEXP callRegRF(SEXP x, SEXP y, SEXP xdim, SEXP sampsize,
           INTEGER(lDaughter), INTEGER(rDaughter), REAL(avnode), INTEGER(mbest),
           RAW(upper), REAL(mse), INTEGER(keepf), INTEGER(replace),
           INTEGER(testdat), RAW(xts), INTEGER(nts), REAL(yts), INTEGER(labelts),
+          REAL(yTestPred), REAL(proxts), REAL(msets), REAL(coef),
+          INTEGER(nout), INTEGER(inbag)
+         );
+
+    return R_NilValue;
+
+}
+
+extern "C" SEXP callRegRFDouble(SEXP x, SEXP y, SEXP xdim, SEXP sampsize,
+               SEXP nthsize, SEXP nrnodes, SEXP nTree, SEXP mtry, SEXP imp,
+               SEXP cat, SEXP maxcat, SEXP jprint, SEXP doProx, SEXP oobprox,
+               SEXP biasCorr, SEXP yptr, SEXP errimp, SEXP impmat,
+               SEXP impSD, SEXP prox, SEXP treeSize, SEXP nodestatus,
+               SEXP lDaughter, SEXP rDaughter, SEXP avnode, SEXP mbest,
+               SEXP upper, SEXP mse, SEXP keepf, SEXP replace,
+               SEXP testdat, SEXP xts, SEXP nts, SEXP yts, SEXP labelts,
+               SEXP yTestPred, SEXP proxts, SEXP msets, SEXP coef,
+               SEXP nout, SEXP inbag) {
+
+
+    regRF(REAL(x), REAL(y), INTEGER(xdim), INTEGER(sampsize),
+          INTEGER(nthsize), INTEGER(nrnodes), INTEGER(nTree), INTEGER(mtry), INTEGER(imp),
+          INTEGER(cat), INTEGER(maxcat), INTEGER(jprint), INTEGER(doProx), INTEGER(oobprox),
+          INTEGER(biasCorr), REAL(yptr), REAL(errimp), REAL(impmat),
+          REAL(impSD), REAL(prox), INTEGER(treeSize), INTEGER(nodestatus),
+          INTEGER(lDaughter), INTEGER(rDaughter), REAL(avnode), INTEGER(mbest),
+          REAL(upper), REAL(mse), INTEGER(keepf), INTEGER(replace),
+          INTEGER(testdat), REAL(xts), INTEGER(nts), REAL(yts), INTEGER(labelts),
           REAL(yTestPred), REAL(proxts), REAL(msets), REAL(coef),
           INTEGER(nout), INTEGER(inbag)
          );
@@ -607,22 +635,25 @@ template <typename T> void regTree(T *x, double *y, int *sampling, int mdim, siz
     Free(nodepop);
 }
 
-/*--------------------------------------------------------------*/
-template <typename T> void findBestSplit(T *x, int *sampling, int *jdex, double *y, int mdim, size_t full_nsample, int nsample,
+/*--------------------------------------------------------------
+findBestSplit for discrete variables, using scanning of
+columns to determine the best split
+--------------------------------------------------------------*/
+template <> void findBestSplit(unsigned char *x, int *sampling, int *jdex, double *y, int mdim, size_t full_nsample, int nsample,
                    int ndstart, int ndend, int *msplit, double *decsplit,
                    double *ubest, int *ndendl, int *jstat, int mtry,
                    double sumnode, int nodecnt, int *cat) {
     int last, ncat[32], icat[32], lc, nl, nr, npopl, npopr, last_npopl;
     size_t i, j, kv, l;
     int *mind, *ncase;
-    T *xt;
-    T max_x, split, current_x, last_split;
+    unsigned char *xt;
+    unsigned char max_x, split, current_x, last_split;
     double *ut, *yl, sumcat[32], avcat[32], tavcat[32], ubestt;
     double crit, critmax, critvar, suml, sumr, d, critParent;
     int flag;
 
     ut = (double *) Calloc(nsample, double);
-    xt = (T *) Calloc(nsample, T);
+    xt = (unsigned char *) Calloc(nsample, unsigned char);
     yl = (double *) Calloc(nsample, double);
     mind  = (int *) Calloc(mdim, int);
     zeroDouble(avcat, 32);
@@ -774,6 +805,154 @@ template <typename T> void findBestSplit(T *x, int *sampling, int *jdex, double 
 
     Free(mind);
     Free(yl);
+    Free(xt);
+    Free(ut);
+}
+
+
+/*--------------------------------------------------------------
+findBestSplit for continuous variables, using QuickSort
+--------------------------------------------------------------*/
+
+template <> void findBestSplit(double *x, int *sampling, int *jdex, double *y, int mdim, size_t full_nsample, int nsample,
+                   int ndstart, int ndend, int *msplit, double *decsplit,
+                   double *ubest, int *ndendl, int *jstat, int mtry,
+                   double sumnode, int nodecnt, int *cat) {
+    int last, ncat[32], icat[32], lc, nl, nr, npopl, npopr, last_npopl;
+    size_t i, j, kv, l;
+    int *mind, *ncase;
+    double *xt, *v;
+    double *ut, *yl, sumcat[32], avcat[32], tavcat[32], ubestt;
+    double crit, critmax, critvar, suml, sumr, d, critParent;
+    int flag;
+
+    ut = (double *) Calloc(nsample, double);
+    xt = (double *) Calloc(nsample, double);
+    v  = (double *) Calloc(nsample, double);
+    yl = (double *) Calloc(nsample, double);
+    mind  = (int *) Calloc(mdim, int);
+    zeroDouble(avcat, 32);
+    zeroDouble(tavcat, 32);
+
+    /* START BIG LOOP */
+    *msplit = -1;
+    *decsplit = 0.0;
+    critmax = 0.0;
+    ubestt = 0.0;
+    for (i=0; i < mdim; ++i) mind[i] = i;
+
+    last = mdim - 1;
+    for (i = 0; i < mtry; ++i) {
+        critvar = 0.0;
+        j = (int) (unif_rand() * (last+1));
+        kv = mind[j];
+        swapInt(mind[j], mind[last]);
+        last--;
+
+        lc = cat[kv];
+
+        if (lc == 1) {
+            /* numeric variable */
+            for (j = ndstart; j <= ndend; ++j) {
+                xt[j] = x[full_nsample * kv + sampling[jdex[j] - 1]];
+                yl[j] = y[jdex[j] - 1];
+            }
+        } else {
+            /* categorical variable */
+            zeroInt(ncat, 32);
+            zeroDouble(sumcat, 32);
+            for (j = ndstart; j <= ndend; ++j) {
+                l = (int) x[full_nsample * kv + sampling[jdex[j] - 1]];
+                sumcat[l - 1] += y[jdex[j] - 1];
+                ncat[l - 1] ++;
+            }
+            /* Compute means of Y by category. */
+            for (j = 0; j < lc; ++j) {
+                avcat[j] = ncat[j] ? sumcat[j] / ncat[j] : 0.0;
+            }
+            /* Make the category mean the `pseudo' X data. */
+            for (j = 0; j < nsample; ++j) {
+                xt[j] = avcat[(int) x[full_nsample * kv + sampling[jdex[j] - 1]] - 1];
+                yl[j] = y[jdex[j] - 1];
+            }
+        }
+
+        /* copy the x data in this node. */
+        for (j = ndstart; j <= ndend; ++j) v[j] = xt[j];
+        for (j = 1; j <= nsample; ++j) ncase[j - 1] = j;
+        R_qsort_I(v, ncase, ndstart + 1, ndend + 1);
+        if (v[ndstart] >= v[ndend]) continue;
+
+        critParent = sumnode * sumnode / nodecnt;
+        suml = 0.0;
+        npopl = 0;
+        crit = 0.0;
+
+        /* Search through the "gaps" in the x-variable. */
+        for (j = ndstart; j <= ndend - 1; ++j) {
+            d = yl[ncase[j] - 1];
+            suml += d;
+            npopl++;
+            if (v[j] < v[j+1]) {
+                npopr = nodecnt - npopl;
+                sumr = sumnode - suml;
+                crit = (suml * suml / npopl) + (sumr * sumr / npopr) - critParent;
+                if (crit > critvar) {
+                    ubestt = (v[j] + v[j+1]) / 2.0;
+                    critvar = crit;
+                }
+            }
+        }
+
+        if (critvar > critmax) {
+            *ubest = ubestt;
+            *msplit = kv + 1;
+            critmax = critvar;
+            for (j = ndstart; j <= ndend; ++j) {
+                ut[j] = xt[j];
+            }
+            if (cat[kv] > 1) {
+                for (j = 0; j < cat[kv]; ++j) tavcat[j] = avcat[j];
+            }
+        }
+    }
+    *decsplit = critmax;
+
+    /* If best split can not be found, set to terminal node and return. */
+    if (*msplit != -1) {
+        ncase = (int *) Calloc(nsample, int);
+        nl = ndstart;
+        for (j = ndstart; j <= ndend; ++j) {
+            if (ut[j] <= *ubest) {
+                nl++;
+                ncase[nl-1] = jdex[j];
+            }
+        }
+        *ndendl = imax2(nl - 1, ndstart);
+        nr = *ndendl + 1;
+        for (j = ndstart; j <= ndend; ++j) {
+            if (ut[j] > *ubest) {
+                if (nr >= nsample) break;
+                nr++;
+                ncase[nr - 1] = jdex[j];
+            }
+        }
+        if (*ndendl >= ndend) *ndendl = ndend - 1;
+        for (j = ndstart; j <= ndend; ++j) jdex[j] = ncase[j];
+
+        lc = cat[*msplit - 1];
+        if (lc > 1) {
+            for (j = 0; j < lc; ++j) {
+                icat[j] = (tavcat[j] < *ubest) ? 1 : 0;
+            }
+            *ubest = pack(lc, icat);
+        }
+        Free(ncase);
+    } else *jstat = 1;
+
+    Free(mind);
+    Free(yl);
+    Free(v);
     Free(xt);
     Free(ut);
 }
