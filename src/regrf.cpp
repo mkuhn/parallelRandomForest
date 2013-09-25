@@ -21,6 +21,9 @@
 void simpleLinReg(int nsample, double *x, double *y, double *coef, double *mse, int *hasPred);
 
 
+
+
+
 template <typename T> void regRF(T *x, double *y, int *xdim, int *sampsize,
            int *nthsize, int *nrnodes, int *nTree, int *mtry, int *imp,
            int *cat, int *maxcat, int *jprint, int *doProx, int *oobprox,
@@ -262,38 +265,37 @@ template <typename T> void regRF(T *x, double *y, int *xdim, int *sampsize,
 
         /* Variable importance */
         if (varImp) {
-            // !!! not migrated yet to changed orientation of X matrix
-            // for (mr = 0; mr < mdim; ++mr) {
-            //              if (varUsed[mr]) { /* Go ahead if the variable is used */
-            //                  /* make a copy of the m-th variable into xtmp */
-            //                  for (n = 0; n < nsample; ++n)
-            //                      xtmp[n] = x[mr + n * mdim];
-            //                  ooberrperm = 0.0;
-            //                  for (k = 0; k < nPerm; ++k) {
-            //                      permuteOOB(mr, x, in, nsample, mdim);
-            //                      predictRegTree(x, nsample, mdim, lDaughter + idx,
-            //                                     rDaughter + idx, nodestatus + idx, ytr,
-            //                                     upper + idx, avnode + idx, mbest + idx,
-            //                                     treeSize[j], cat, *maxcat, nodex);
-            //                      for (n = 0; n < nsample; ++n) {
-            //                          if (in[n] == 0) {
-            //                              r = ytr[n] - y[n];
-            //                              ooberrperm += r * r;
-            //                              if (localImp) {
-            //                                  impmat[mr + n * mdim] +=
-            //                                      (r*r - resOOB[n]*resOOB[n]) / nPerm;
-            //                              }
-            //                          }
-            //                      }
-            //                  }
-            //                  delta = (ooberrperm / nPerm - ooberr) / nOOB;
-            //                  errimp[mr] += delta;
-            //                  impSD[mr] += delta * delta;
-            //                  /* copy original data back */
-            //                  for (n = 0; n < nsample; ++n)
-            //                      x[mr + n * mdim] = xtmp[n];
-            //              }
-            //          }
+            for (mr = 0; mr < mdim; ++mr) {
+             if (varUsed[mr]) { /* Go ahead if the variable is used */
+                 /* make a copy of the m-th variable into xtmp */
+                 for (n = 0; n < nsample; ++n)
+                     xtmp[n] = x[nsample * mr + n];
+                 ooberrperm = 0.0;
+                 for (k = 0; k < nPerm; ++k) {
+                     permuteOOB(mr, x, in, nsample, mdim);
+                     predictRegTree(x, nsample, mdim, lDaughter + idx,
+                                    rDaughter + idx, nodestatus + idx, ytr,
+                                    upper + idx, avnode + idx, mbest + idx,
+                                    treeSize[j], cat, *maxcat, nodex);
+                     for (n = 0; n < nsample; ++n) {
+                         if (in[n] == 0) {
+                             r = ytr[n] - y[n];
+                             ooberrperm += r * r;
+                             if (localImp) {
+                                 impmat[mr + n * mdim] +=
+                                     (r*r - resOOB[n]*resOOB[n]) / nPerm;
+                             }
+                         }
+                     }
+                 }
+                 delta = (ooberrperm / nPerm - ooberr) / nOOB;
+                 errimp[mr] += delta;
+                 impSD[mr] += delta * delta;
+                 /* copy original data back */
+                 for (n = 0; n < nsample; ++n)
+                     x[nsample * mr + n] = xtmp[n];
+             }
+         }
         }
     }
     PutRNGstate();
@@ -1020,5 +1022,6 @@ template <typename T> void predictRegTree(T *x, int nsample, int mdim,
     }
     if (maxcat > 1) Free(cbestsplit);
 }
+
 
 

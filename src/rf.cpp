@@ -438,7 +438,7 @@ extern "C" void classRF(double *x, int *dimx, int *cl, int *ncl, int *cat, int *
                     zeroInt(nrightimp, nclass);
                     for (n = 0; n < nsample; ++n) tx[n] = x[m + n*mdim];
                     /* Permute the m-th variable. */
-                    permuteOOB(m, x, jin, nsample, mdim);
+                    permuteOOB_legacy(m, x, jin, nsample, mdim);
                     /* Predict the modified data using the current tree. */
                     predictClassTree(x, nsample, mdim, treemap + 2*idxByNnode,
                                      nodestatus + idxByNnode,

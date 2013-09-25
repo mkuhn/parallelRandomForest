@@ -172,48 +172,6 @@ void Xtranslate(double *x, int mdim, int nrnodes, int nsample,
     }
 }
 
-void permuteOOB(int m, double *x, int *in, int nsample, int mdim) {
-    /* Permute the OOB part of a variable in x.
-     * Argument:
-     *   m: the variable to be permuted
-     *   x: the data matrix (variables in rows)
-     *   in: vector indicating which case is OOB
-     *   nsample: number of cases in the data
-     *   mdim: number of variables in the data
-     */
-    double *tp, tmp;
-    int i, last, k, nOOB = 0;
-
-    tp = (double *) Calloc(nsample, double);
-
-    for (i = 0; i < nsample; ++i) {
-        /* make a copy of the OOB part of the data into tp (for permuting) */
-        if (in[i] == 0) {
-            tp[nOOB] = x[m + i*mdim];
-            nOOB++;
-        }
-    }
-    /* Permute tp */
-    last = nOOB;
-    for (i = 0; i < nOOB; ++i) {
-        k = (int) last * unif_rand();
-        tmp = tp[last - 1];
-        tp[last - 1] = tp[k];
-        tp[k] = tmp;
-        last--;
-    }
-
-    /* Copy the permuted OOB data back into x. */
-    nOOB = 0;
-    for (i = 0; i < nsample; ++i) {
-        if (in[i] == 0) {
-            x[m + i*mdim] = tp[nOOB];
-            nOOB++;
-        }
-    }
-    Free(tp);
-}
-
 /* Compute proximity. */
 void computeProximity(double *prox, int oobprox, int *node, int *inbag,
                       int *oobpair, int n) {

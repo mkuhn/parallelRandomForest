@@ -78,9 +78,96 @@ void modA(int *a, int *nuse, const int nsample, const int mdim, int *cat,
 void Xtranslate(double *x, int mdim, int nrnodes, int nsample,
                 int *bestvar, int *bestsplit, int *bestsplitnext,
                 double *xbestsplit, int *nodestatus, int *cat, int treeSize);
-void permuteOOB(int m, double *x, int *in, int nsample, int mdim);
 void computeProximity(double *prox, int oobprox, int *node, int *inbag,
                       int *oobpair, int n);
+
+
+// Version for rotated matrix, still used by classification RF
+template <typename T> void permuteOOB_legacy(int m, T *x, int *in, int nsample, int mdim) {
+    /* Permute the OOB part of a variable in x.
+     * Have to keep template function in header
+     * Argument:
+     *   m: the variable to be permuted
+     *   x: the data matrix (variables in rows)
+     *   in: vector indicating which case is OOB
+     *   nsample: number of cases in the data
+     *   mdim: number of variables in the data
+     */
+    T *tp, tmp;
+    int i, last, k, nOOB = 0;
+
+    tp = (T *) Calloc(nsample, T);
+
+    for (i = 0; i < nsample; ++i) {
+        /* make a copy of the OOB part of the data into tp (for permuting) */
+        if (in[i] == 0) {
+            tp[nOOB] = x[m + i*mdim];
+            nOOB++;
+        }
+    }
+    /* Permute tp */
+    last = nOOB;
+    for (i = 0; i < nOOB; ++i) {
+        k = (int) last * unif_rand();
+        tmp = tp[last - 1];
+        tp[last - 1] = tp[k];
+        tp[k] = tmp;
+        last--;
+    }
+
+    /* Copy the permuted OOB data back into x. */
+    nOOB = 0;
+    for (i = 0; i < nsample; ++i) {
+        if (in[i] == 0) {
+            x[m + i*mdim] = tp[nOOB];
+            nOOB++;
+        }
+    }
+    Free(tp);
+}
+
+template <typename T> void permuteOOB(int m, T *x, int *in, int nsample, int mdim) {
+    /* Permute the OOB part of a variable in x.
+     * Have to keep template function in header
+     * Argument:
+     *   m: the variable to be permuted
+     *   x: the data matrix (variables in rows)
+     *   in: vector indicating which case is OOB
+     *   nsample: number of cases in the data
+     *   mdim: number of variables in the data
+     */
+    T *tp, tmp;
+    int i, last, k, nOOB = 0;
+
+    tp = (T *) Calloc(nsample, T);
+
+    for (i = 0; i < nsample; ++i) {
+        /* make a copy of the OOB part of the data into tp (for permuting) */
+        if (in[i] == 0) {
+            tp[nOOB] = x[m*nsample + i];
+            nOOB++;
+        }
+    }
+    /* Permute tp */
+    last = nOOB;
+    for (i = 0; i < nOOB; ++i) {
+        k = (int) last * unif_rand();
+        tmp = tp[last - 1];
+        tp[last - 1] = tp[k];
+        tp[k] = tmp;
+        last--;
+    }
+
+    /* Copy the permuted OOB data back into x. */
+    nOOB = 0;
+    for (i = 0; i < nsample; ++i) {
+        if (in[i] == 0) {
+            x[m*nsample + i] = tp[nOOB];
+            nOOB++;
+        }
+    }
+    Free(tp);
+}
 
 /* Template of Fortran subroutines to be called from the C wrapper */
 extern "C" void F77_NAME(buildtree)(int *a, int *b, int *cl, int *cat,
@@ -94,6 +181,7 @@ extern "C" void F77_NAME(buildtree)(int *a, int *b, int *cl, int *cat,
                                 int *, int *, int *, int *, int *, int *,
                                 double *, double *, double *,
                                 int *, int *, int *);
+
 
 /* Node status */
 #define NODE_TERMINAL -1

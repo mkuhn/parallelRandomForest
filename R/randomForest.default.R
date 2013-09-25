@@ -17,11 +17,6 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
 
         raw_matrix <- storage.mode(x) == "raw"
 
-        if (importance) {
-            write("Computing feature importance not supported yet by parallel RF.", file=stderr())
-            importance <- F
-        }
-
         addclass <- is.null(y)
         classRF <- addclass || is.factor(y)
         if (!classRF && length(unique(y)) <= 5) {
