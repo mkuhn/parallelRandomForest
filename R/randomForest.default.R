@@ -15,9 +15,7 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
              keep.forest=!is.null(y) && is.null(xtest), corr.bias=FALSE,
              keep.inbag=FALSE, nthreads=1, skip.checks = TRUE, ...) {
 
-        if (storage.mode(x) != "raw") {
-           stop("Error: need matrix of storage mode raw.")
-        }
+        raw_matrix <- storage.mode(x) == "raw"
 
         if (importance) {
             write("Computing feature importance not supported yet by parallel RF.", file=stderr())
@@ -207,16 +205,13 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
 
         if (testdat) {
 
-            if (storage.mode(xtest) != "raw") {
-                stop("Error: need xtest matrix of storage mode raw.")
-            }
             if (is.null(ytest)) {
                 ytest <- labelts <- 0
             } else {
                 labelts <- TRUE
             }
         } else {
-            xtest <- raw(1)
+            xtest <- ifelse(raw_matrix, raw(1), double(1))
             ytest <- double(1)
             ntest <- 1
             labelts <- FALSE
@@ -396,7 +391,11 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
                 rightDaughter <- matrix(integer(nrnodes * nt), ncol=nt)
                 nodepred <- matrix(double(nrnodes * nt), ncol=nt)
                 bestvar <- matrix(integer(nrnodes * nt), ncol=nt)
-                xbestsplit <- matrix(raw(nrnodes * nt), ncol=nt)
+                if (raw_matrix) {
+                    xbestsplit <- matrix(raw(nrnodes * nt), ncol=nt)
+                } else {
+                    xbestsplit <- matrix(double(nrnodes * nt), ncol=nt)
+                }
                 mse <- double(ntree)
                 keep <- as.integer(c(keep.forest, keep.inbag))
                 replace <- as.integer(replace)
@@ -411,7 +410,7 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
                 oob.times <- integer(n)
                 inbag <- if (keep.inbag) matrix(integer(n * ntree), n) else integer(1)
 
-                .Call("callRegRFRaw",
+                .Call(ifelse(raw_matrix, "callRegRFRaw", "callRegRFDouble"),
                             x,
                             as.double(y),
                             as.integer(c(n, p)),

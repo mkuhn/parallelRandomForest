@@ -452,7 +452,7 @@ template <typename T> void regForest(T *x, double *ypred, int *mdim, int *n,
     }
 }
 
-extern "C" SEXP callRegForest(SEXP x, SEXP ypred, SEXP mdim, SEXP n,
+extern "C" SEXP callRegForestRaw(SEXP x, SEXP ypred, SEXP mdim, SEXP n,
                SEXP ntree, SEXP lDaughter, SEXP rDaughter,
                SEXP nodestatus, SEXP nrnodes, SEXP xsplit,
                SEXP avnodes, SEXP mbest, SEXP treeSize, SEXP cat,
@@ -463,6 +463,24 @@ extern "C" SEXP callRegForest(SEXP x, SEXP ypred, SEXP mdim, SEXP n,
     regForest(RAW(x), REAL(ypred), INTEGER(mdim), INTEGER(n),
                INTEGER(ntree), INTEGER(lDaughter), INTEGER(rDaughter),
                INTEGER(nodestatus), INTEGER(nrnodes), RAW(xsplit),
+               REAL(avnodes), INTEGER(mbest), INTEGER(treeSize), INTEGER(cat),
+               INTEGER(maxcat), INTEGER(keepPred), REAL(allpred), INTEGER(doProx),
+               REAL(proxMat), INTEGER(nodes), INTEGER(nodex));
+
+    return R_NilValue;
+}
+
+extern "C" SEXP callRegForestDouble(SEXP x, SEXP ypred, SEXP mdim, SEXP n,
+               SEXP ntree, SEXP lDaughter, SEXP rDaughter,
+               SEXP nodestatus, SEXP nrnodes, SEXP xsplit,
+               SEXP avnodes, SEXP mbest, SEXP treeSize, SEXP cat,
+               SEXP maxcat, SEXP keepPred, SEXP allpred, SEXP doProx,
+               SEXP proxMat, SEXP nodes, SEXP nodex)
+{
+
+    regForest(REAL(x), REAL(ypred), INTEGER(mdim), INTEGER(n),
+               INTEGER(ntree), INTEGER(lDaughter), INTEGER(rDaughter),
+               INTEGER(nodestatus), INTEGER(nrnodes), REAL(xsplit),
                REAL(avnodes), INTEGER(mbest), INTEGER(treeSize), INTEGER(cat),
                INTEGER(maxcat), INTEGER(keepPred), REAL(allpred), INTEGER(doProx),
                REAL(proxMat), INTEGER(nodes), INTEGER(nodex));
@@ -830,6 +848,7 @@ template <> void findBestSplit(double *x, int *sampling, int *jdex, double *y, i
     xt = (double *) Calloc(nsample, double);
     v  = (double *) Calloc(nsample, double);
     yl = (double *) Calloc(nsample, double);
+    ncase = (int *) Calloc(nsample, int);
     mind  = (int *) Calloc(mdim, int);
     zeroDouble(avcat, 32);
     zeroDouble(tavcat, 32);
@@ -920,7 +939,6 @@ template <> void findBestSplit(double *x, int *sampling, int *jdex, double *y, i
 
     /* If best split can not be found, set to terminal node and return. */
     if (*msplit != -1) {
-        ncase = (int *) Calloc(nsample, int);
         nl = ndstart;
         for (j = ndstart; j <= ndend; ++j) {
             if (ut[j] <= *ubest) {

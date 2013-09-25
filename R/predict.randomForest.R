@@ -151,8 +151,8 @@
                 storage.mode(object$forest$rightDaughter) <- "integer"
             if (! is.integer(object$forest$nodestatus))
                 storage.mode(object$forest$nodestatus) <- "integer"
-            if (! is.raw(object$forest$xbestsplit))
-                storage.mode(object$forest$xbestsplit) <- "raw"
+            # if (! is.raw(object$forest$xbestsplit))
+            #     storage.mode(object$forest$xbestsplit) <- "raw"
             if (! is.double(object$forest$nodepred))
                 storage.mode(object$forest$nodepred) <- "double"
             if (! is.integer(object$forest$bestvar))
@@ -162,7 +162,7 @@
             if (! is.integer(object$forest$ncat))
                 storage.mode(object$forest$ncat) <- "integer"
 
-            .Call("callRegForest",
+            .Call( ifelse(storage.mode(x) == "raw", "callRegForestRaw", "callRegForestDouble"),
                   x,
                   ypred = ypred,
                   as.integer(mdim),
