@@ -78,7 +78,7 @@ template <typename T> void regRF(T *x, double *y, int *xdim, int *sampsize,
 
     yb         = (double *) S_alloc(*sampsize, sizeof(double));
     ytr        = (double *) S_alloc(nsample, sizeof(double));
-    xtmp       = (T *) S_alloc(nsample, sizeof(char));
+    xtmp       = (T *) S_alloc(nsample, sizeof(T));
     resOOB     = (double *) S_alloc(nsample, sizeof(double));
 
     sampling = (int *) S_alloc(*sampsize, sizeof(int));
