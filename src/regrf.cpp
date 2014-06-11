@@ -967,9 +967,9 @@ template <> void findBestSplit(double *x, int *sampling, int *jdex, double *y, i
             }
             *ubest = pack(lc, icat);
         }
-        Free(ncase);
     } else *jstat = 1;
 
+    Free(ncase);
     Free(mind);
     Free(yl);
     Free(v);
