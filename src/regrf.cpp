@@ -656,6 +656,60 @@ template <typename T> void regTree(T *x, double *y, int *sampling, int mdim, siz
 }
 
 /*--------------------------------------------------------------
+Rely on the fact that we have only relatively few values (e.g. 0/1/2),
+so don't sort the values but rather scan through each split
+--------------------------------------------------------------*/
+template <> void detectSplit(unsigned char *x, unsigned char *xt, double *yl, int ndstart, int ndend, int nodecnt,
+   unsigned char max_x, double sumnode, double critParent,
+   double *critvar, double *ubestt)
+{
+
+    double suml = 0.0;
+    int npopl = 0;
+    double crit = 0.0;
+
+    /* gather all cases where x is 0 */
+    for (size_t j = ndstart; j <= ndend; ++j) {
+        unsigned char flag = xt[j] == 0;
+        suml += flag * yl[j];
+        npopl += flag;
+    }
+
+    unsigned char last_split = 0;
+
+    /* try all possible splits */
+    for (unsigned char split = 1; split <= max_x; split++) {
+
+        /* compute effect of split here, but don't split now as we don't know the next potential value */
+        int npopr = nodecnt - npopl;
+        double sumr = sumnode - suml;
+        crit = (suml * suml / npopl) + (sumr * sumr / npopr) - critParent;
+
+        /* we don't need to compute anything for the last split, as this would only set "sumr" to 0 */
+        if (split < max_x) {
+            int last_npopl = npopl;
+
+            for (size_t j = ndstart; j <= ndend; ++j) {
+                unsigned char flag = xt[j] == split;
+                suml += flag * yl[j];
+                npopl += flag;
+            }
+
+            if (last_npopl == npopl) continue;
+        }
+
+        if (crit > *critvar) {
+            /* be careful not to cause an overflow as split and last_split are chars */
+            *ubestt = split / 2.0 + last_split / 2.0;
+            *critvar = crit;
+        }
+
+        last_split = split;
+    }
+}
+
+
+/*--------------------------------------------------------------
 findBestSplit for discrete variables, using scanning of
 columns to determine the best split
 --------------------------------------------------------------*/
@@ -663,14 +717,13 @@ template <> void findBestSplit(unsigned char *x, int *sampling, int *jdex, doubl
                    int ndstart, int ndend, int *msplit, double *decsplit,
                    double *ubest, int *ndendl, int *jstat, int mtry,
                    double sumnode, int nodecnt, int *cat) {
-    int last, ncat[MAX_CAT], icat[MAX_CAT], lc, nl, nr, npopl, npopr, last_npopl;
+    int last, ncat[MAX_CAT], icat[MAX_CAT], lc, nl, nr;
     size_t i, j, kv, l;
     int *mind, *ncase;
     unsigned char *xt;
-    unsigned char max_x, split, current_x, last_split;
+    unsigned char max_x;
     double *ut, *yl, sumcat[MAX_CAT], avcat[MAX_CAT], tavcat[MAX_CAT], ubestt;
-    double crit, critmax, critvar, suml, sumr, d, critParent;
-    int flag;
+    double critmax, critvar, critParent;
 
     ut = (double *) Calloc(nsample, double);
     xt = (unsigned char *) Calloc(nsample, unsigned char);
@@ -701,7 +754,7 @@ template <> void findBestSplit(unsigned char *x, int *sampling, int *jdex, doubl
         if (lc == 1) {
             /* numeric variable */
             for (j = ndstart; j <= ndend; ++j) {
-                current_x = x[full_nsample * kv + sampling[jdex[j] - 1]];
+                unsigned char current_x = x[full_nsample * kv + sampling[jdex[j] - 1]];
                 xt[j] = current_x;
                 if (current_x > max_x) max_x = current_x;
                 yl[j] = y[jdex[j] - 1];
@@ -721,7 +774,7 @@ template <> void findBestSplit(unsigned char *x, int *sampling, int *jdex, doubl
             }
             /* Make the category mean the `pseudo' X data. */
             for (j = 0; j < nsample; ++j) {
-                current_x = avcat[(int) x[full_nsample * kv + sampling[jdex[j] - 1]] - 1];
+                unsigned char current_x = avcat[(int) x[full_nsample * kv + sampling[jdex[j] - 1]] - 1];
                 xt[j] = current_x;
                 if (current_x > max_x) max_x = current_x;
                 yl[j] = y[jdex[j] - 1];
@@ -730,52 +783,9 @@ template <> void findBestSplit(unsigned char *x, int *sampling, int *jdex, doubl
 
         if (max_x == 0) continue;
 
-        /* changed implementation: rely on the fact that we have only relatively few values (e.g. 0/1/2),
-           so don't sort the values but rather scan through each split
-         */
         critParent = sumnode * sumnode / nodecnt;
-        suml = 0.0;
-        npopl = 0;
-        crit = 0.0;
 
-        /* gather all cases where x is 0 */
-        for (j = ndstart; j <= ndend; ++j) {
-            flag = xt[j] == 0;
-            suml += flag * yl[j];
-            npopl += flag;
-        }
-
-        last_split = 0;
-
-        /* try all possible splits */
-        for (split = 1; split <= max_x; split++) {
-
-            /* compute effect of split here, but don't split now as we don't know the next potential value */
-            npopr = nodecnt - npopl;
-            sumr = sumnode - suml;
-            crit = (suml * suml / npopl) + (sumr * sumr / npopr) - critParent;
-
-            /* we don't need to compute anything for the last split, as this would only set "sumr" to 0 */
-            if (split < max_x) {
-                last_npopl = npopl;
-
-                for (j = ndstart; j <= ndend; ++j) {
-                    flag = xt[j] == split;
-                    suml += flag * yl[j];
-                    npopl += flag;
-                }
-
-                if (last_npopl == npopl) continue;
-            }
-
-            if (crit > critvar) {
-                /* be careful not to cause an overflow as split and last_split are chars */
-                ubestt = split / 2.0 + last_split / 2.0;
-                critvar = crit;
-            }
-
-            last_split = split;
-        }
+        detectSplit(x, xt, yl, ndstart, ndend, nodecnt, max_x, sumnode, critParent, &critvar, &ubestt);
 
         if (critvar > critmax) {
             *ubest = ubestt;
@@ -838,7 +848,7 @@ template <> void findBestSplit(double *x, int *sampling, int *jdex, double *y, i
                    int ndstart, int ndend, int *msplit, double *decsplit,
                    double *ubest, int *ndendl, int *jstat, int mtry,
                    double sumnode, int nodecnt, int *cat) {
-    int last, ncat[MAX_CAT], icat[MAX_CAT], lc, nl, nr, npopl, npopr, last_npopl;
+    int last, ncat[MAX_CAT], icat[MAX_CAT], lc, nl, nr, npopl, npopr;
     size_t i, j, kv, l;
     int *mind, *ncase;
     double *xt, *v;
