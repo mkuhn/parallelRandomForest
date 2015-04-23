@@ -47,7 +47,7 @@ template <typename T> void regTree(T *x, double *y, int *sampling, int mdim, siz
              int *nodestatus, int nrnodes, int *treeSize, int nthsize,
              int mtry, int *mbest, int *cat, double *tgini, int *varUsed);
 
-template <typename T> void detectSplit(T *x, T *xt, double *yl, int ndstart, int ndend, int nodecnt,
+template <typename T> void detectSplit(T *x, T *xt, double *yl, int ndstart, int ndend, int nodecnt, int nsample,
    T max_x, double sumnode, double critParent,
    double *critvar, double *ubestt);
 
