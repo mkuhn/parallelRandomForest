@@ -356,7 +356,7 @@ extern "C" void F77_NAME(catmax)(double *parentDen, double *tclasscat,
 
 /* Find best split of with categorical variable when there are two classes */
 extern "C" void F77_NAME(catmaxb)(double *totalWt, double *tclasscat, double *classCount,
-                       int *nclass, int *nCat, unsigned int *nbest, double *critmax,
+                       int *nclass, int *nCat, unsigned int *best, double *critmax,
                        int *nhit, double *catCount) {
 
     double catProportion[MAX_CAT], cp[MAX_CAT], cm[MAX_CAT];
