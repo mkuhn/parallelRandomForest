@@ -663,6 +663,7 @@ template <> void detectSplit(unsigned char *x, unsigned char *xt, double *yl, in
    unsigned char max_x, double sumnode, double critParent,
    double *critvar, double *ubestt)
 {
+    if (max_x == 0) return;
 
     double suml = 0.0;
     int npopl = 0;
@@ -816,8 +817,6 @@ template <typename T> void findBestSplit(T *x, int *sampling, int *jdex, double 
                 yl[j] = y[jdex[j] - 1];
             }
         }
-
-        if (max_x == 0) continue;
 
         critParent = sumnode * sumnode / nodecnt;
 
