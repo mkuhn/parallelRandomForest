@@ -313,11 +313,11 @@ template <typename T> void regRF(T *x, double *y, int *xdim, int *sampsize,
     }
 
     if (*doProx) {
-        for (n = 0; n < nsample; ++n) {
-            for (k = n + 1; k < nsample; ++k) {
-                prox[nsample*k + n] /= oobprox ?
-                                       (oobpair[nsample*k + n] > 0 ? oobpair[nsample*k + n] : 1) :
-                                           *nTree;
+		for (n = 0; n < nsample; ++n) {
+			for (k = n + 1; k < nsample; ++k) {
+                prox[nsample*k + n] /= *oobprox ?
+                    (oobpair[nsample*k + n] > 0 ? oobpair[nsample*k + n] : 1) :
+                    *nTree;
                 prox[nsample * n + k] = prox[nsample * k + n];
             }
             prox[nsample * n + n] = 1.0;
@@ -663,12 +663,12 @@ template <> void findBestSplit(unsigned char *x, int *sampling, int *jdex, doubl
                    int ndstart, int ndend, int *msplit, double *decsplit,
                    double *ubest, int *ndendl, int *jstat, int mtry,
                    double sumnode, int nodecnt, int *cat) {
-    int last, ncat[32], icat[32], lc, nl, nr, npopl, npopr, last_npopl;
+    int last, ncat[MAX_CAT], icat[MAX_CAT], lc, nl, nr, npopl, npopr, last_npopl;
     size_t i, j, kv, l;
     int *mind, *ncase;
     unsigned char *xt;
     unsigned char max_x, split, current_x, last_split;
-    double *ut, *yl, sumcat[32], avcat[32], tavcat[32], ubestt;
+    double *ut, *yl, sumcat[MAX_CAT], avcat[MAX_CAT], tavcat[MAX_CAT], ubestt;
     double crit, critmax, critvar, suml, sumr, d, critParent;
     int flag;
 
@@ -676,8 +676,8 @@ template <> void findBestSplit(unsigned char *x, int *sampling, int *jdex, doubl
     xt = (unsigned char *) Calloc(nsample, unsigned char);
     yl = (double *) Calloc(nsample, double);
     mind  = (int *) Calloc(mdim, int);
-    zeroDouble(avcat, 32);
-    zeroDouble(tavcat, 32);
+    zeroDouble(avcat, MAX_CAT);
+    zeroDouble(tavcat, MAX_CAT);
 
     /* START BIG LOOP */
     *msplit = -1;
@@ -708,8 +708,8 @@ template <> void findBestSplit(unsigned char *x, int *sampling, int *jdex, doubl
             }
         } else {
             /* categorical variable */
-            zeroInt(ncat, 32);
-            zeroDouble(sumcat, 32);
+            zeroInt(ncat, MAX_CAT);
+            zeroDouble(sumcat, MAX_CAT);
             for (j = ndstart; j <= ndend; ++j) {
                 l = (int) x[full_nsample * kv + sampling[jdex[j] - 1]];
                 sumcat[l - 1] += y[jdex[j] - 1];
@@ -838,11 +838,11 @@ template <> void findBestSplit(double *x, int *sampling, int *jdex, double *y, i
                    int ndstart, int ndend, int *msplit, double *decsplit,
                    double *ubest, int *ndendl, int *jstat, int mtry,
                    double sumnode, int nodecnt, int *cat) {
-    int last, ncat[32], icat[32], lc, nl, nr, npopl, npopr, last_npopl;
+    int last, ncat[MAX_CAT], icat[MAX_CAT], lc, nl, nr, npopl, npopr, last_npopl;
     size_t i, j, kv, l;
     int *mind, *ncase;
     double *xt, *v;
-    double *ut, *yl, sumcat[32], avcat[32], tavcat[32], ubestt;
+    double *ut, *yl, sumcat[MAX_CAT], avcat[MAX_CAT], tavcat[MAX_CAT], ubestt;
     double crit, critmax, critvar, suml, sumr, d, critParent;
     int flag;
 
@@ -852,8 +852,8 @@ template <> void findBestSplit(double *x, int *sampling, int *jdex, double *y, i
     yl = (double *) Calloc(nsample, double);
     ncase = (int *) Calloc(nsample, int);
     mind  = (int *) Calloc(mdim, int);
-    zeroDouble(avcat, 32);
-    zeroDouble(tavcat, 32);
+    zeroDouble(avcat, MAX_CAT);
+    zeroDouble(tavcat, MAX_CAT);
 
     /* START BIG LOOP */
     *msplit = -1;
@@ -880,8 +880,8 @@ template <> void findBestSplit(double *x, int *sampling, int *jdex, double *y, i
             }
         } else {
             /* categorical variable */
-            zeroInt(ncat, 32);
-            zeroDouble(sumcat, 32);
+            zeroInt(ncat, MAX_CAT);
+            zeroDouble(sumcat, MAX_CAT);
             for (j = ndstart; j <= ndend; ++j) {
                 l = (int) x[full_nsample * kv + sampling[jdex[j] - 1]];
                 sumcat[l - 1] += y[jdex[j] - 1];

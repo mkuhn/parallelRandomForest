@@ -14,6 +14,8 @@
 #ifndef RF_H
 #define RF_H
 
+/* #define RF_DEBUG */
+
 /* test if the bit at position pos is turned on */
 #define isBitOn(x,pos) (((x) & (1 << (pos))) > 0)
 /* swap two integers */
@@ -62,8 +64,8 @@ void predictClassTree(double *x, int n, int mdim, int *treemap,
                       int ndbigtree, int *cat, int nclass,
                       int *jts, int *nodex, int maxcat);
 
-unsigned int pack(int l, int *icat);
-void unpack(int nBits, unsigned int npack, int *icat);
+double pack(const int l, const int *icat);
+void unpack(const double pack, const int nBits, int *icat);
 
 
 void zeroInt(int *x, int length);
@@ -182,6 +184,9 @@ extern "C" void F77_NAME(buildtree)(int *a, int *b, int *cl, int *cat,
                                 double *, double *, double *,
                                 int *, int *, int *);
 
+
+/* maximum number of categories allowed in categorical predictors */
+#define MAX_CAT 53
 
 /* Node status */
 #define NODE_TERMINAL -1
