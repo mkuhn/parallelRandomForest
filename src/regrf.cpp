@@ -542,7 +542,7 @@ template <typename T> void regTree(T *x, double *y, int *sampling, int mdim, siz
              double *tgini, int *varUsed) {
     int i, j, k, m, ncur, *jdex, *nodestart, *nodepop;
     int ndstart, ndend, ndendl, nodecnt, jstat, msplit;
-    double d, ss, av, decsplit, ubest, sumnode;
+    double d, av, decsplit, ubest, sumnode;
 
     nodestart = (int *) Calloc(nrnodes, int);
     nodepop   = (int *) Calloc(nrnodes, int);
@@ -563,10 +563,8 @@ template <typename T> void regTree(T *x, double *y, int *sampling, int mdim, siz
 
     /* compute mean and sum of squares for Y */
     av = 0.0;
-    ss = 0.0;
     for (i = 0; i < nsample; ++i) {
         d = y[jdex[i] - 1];
-        ss += i * (av - d) * (av - d) / (i + 1);
         av = (i * av + d) / (i + 1);
     }
     avnode[0] = av;
@@ -584,7 +582,6 @@ template <typename T> void regTree(T *x, double *y, int *sampling, int mdim, siz
         sumnode = nodecnt * avnode[k];
         jstat = 0;
         decsplit = 0.0;
-
 
         findBestSplit(x, sampling, jdex, y, mdim, full_nsample, nsample, ndstart, ndend, &msplit,
                       &decsplit, &ubest, &ndendl, &jstat, mtry, sumnode,
@@ -609,11 +606,9 @@ template <typename T> void regTree(T *x, double *y, int *sampling, int mdim, siz
 
         /* compute mean and sum of squares for the left daughter node */
         av = 0.0;
-        ss = 0.0;
         for (j = ndstart; j <= ndendl; ++j) {
             d = y[jdex[j]-1];
             m = j - ndstart;
-            ss += m * (av - d) * (av - d) / (m + 1);
             av = (m * av + d) / (m+1);
         }
         avnode[ncur+1] = av;
@@ -624,11 +619,9 @@ template <typename T> void regTree(T *x, double *y, int *sampling, int mdim, siz
 
         /* compute mean and sum of squares for the right daughter node */
         av = 0.0;
-        ss = 0.0;
         for (j = ndendl + 1; j <= ndend; ++j) {
             d = y[jdex[j]-1];
             m = j - (ndendl + 1);
-            ss += m * (av - d) * (av - d) / (m + 1);
             av = (m * av + d) / (m + 1);
         }
         avnode[ncur + 2] = av;
