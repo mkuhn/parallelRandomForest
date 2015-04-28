@@ -409,7 +409,7 @@ extern "C" void F77_NAME(catmaxb)(double *totalWt, double *tclasscat, double *cl
             /* Rprintf("%i ", kcat[i]); */
         }
         *best = pack(*nCat, kcat);
-		/* Rprintf("\nnbest=%u\nnbest=%i\n", *nbest, *nbest); */
+        /* Rprintf("\nnbest=%u\nnbest=%i\n", *nbest, *nbest); */
     }
 }
 
@@ -421,7 +421,7 @@ void predictClassTree(double *x, int n, int mdim, int *treemap,
                       int treeSize, int *cat, int nclass,
                       int *jts, int *nodex, int maxcat) {
     int m, i, j, k, *cbestsplit;
-	double dpack;
+    double dpack;
 
     /* decode the categorical splits */
     if (maxcat > 1) {
@@ -434,8 +434,8 @@ void predictClassTree(double *x, int n, int mdim, int *treemap,
                     /* unpack `dpack' into bits */
                     /* unpack(dpack, maxcat, cbestsplit + i * maxcat); */
                     for (j = 0; j < cat[bestvar[i] - 1]; ++j) {
-                    	cbestsplit[j + i*maxcat] = ((unsigned long) dpack & 1) ? 1 : 0;
-                    	dpack = dpack / 2;
+                        cbestsplit[j + i*maxcat] = ((unsigned long) dpack & 1) ? 1 : 0;
+                        dpack = dpack / 2;
                     }
                 }
             }

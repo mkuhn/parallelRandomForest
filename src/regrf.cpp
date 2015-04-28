@@ -313,8 +313,8 @@ template <typename T> void regRF(T *x, double *y, int *xdim, int *sampsize,
     }
 
     if (*doProx) {
-		for (n = 0; n < nsample; ++n) {
-			for (k = n + 1; k < nsample; ++k) {
+        for (n = 0; n < nsample; ++n) {
+            for (k = n + 1; k < nsample; ++k) {
                 prox[nsample*k + n] /= *oobprox ?
                     (oobpair[nsample*k + n] > 0 ? oobpair[nsample*k + n] : 1) :
                     *nTree;

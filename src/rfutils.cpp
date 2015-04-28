@@ -208,7 +208,7 @@ void computeProximity(double *prox, int oobprox, int *node, int *inbag,
 
 double pack(const int nBits, const int *bits) {
     int i = nBits - 1;
-	double pack = bits[i];
+    double pack = bits[i];
     for (i = nBits - 1; i > 0; --i) pack = 2.0 * pack + bits[i - 1];
     return(pack);
 }
@@ -217,8 +217,8 @@ void unpack(const double pack, const int nBits, int *bits) {
     int i;
     double x = pack;
     for (i = 0; i <= nBits; ++i) {
-    	bits[i] = ((unsigned long) x & 1) ? 1 : 0;
-    	x = x / 2;
+        bits[i] = ((unsigned long) x & 1) ? 1 : 0;
+        x = x / 2;
     }
 }
 
@@ -237,6 +237,6 @@ void unpack(int nBits, unsigned int pack, int *bits) {
 */
 
 extern "C" void F77_NAME(unpack)(double *pack, int *nBits, int *bits) {
-	unpack(*pack, *nBits, bits);
+    unpack(*pack, *nBits, bits);
 }
 
