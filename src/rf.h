@@ -14,6 +14,8 @@
 #ifndef RF_H
 #define RF_H
 
+/* #define RF_DEBUG */
+
 /* test if the bit at position pos is turned on */
 #define isBitOn(x,pos) (((x) & (1 << (pos))) > 0)
 /* swap two integers */
@@ -45,6 +47,10 @@ template <typename T> void regTree(T *x, double *y, int *sampling, int mdim, siz
              int *nodestatus, int nrnodes, int *treeSize, int nthsize,
              int mtry, int *mbest, int *cat, double *tgini, int *varUsed);
 
+template <typename T> void detectSplit(T *x, T *xt, double *yl, int ndstart, int ndend, int nodecnt, int nsample,
+   T max_x, double sumnode, double critParent,
+   double *critvar, double *ubestt);
+
 template <typename T> void findBestSplit(T *x, int *sampling, int *jdex, double *y, int mdim, size_t full_nsample, int nsample,
                    int ndstart, int ndend, int *msplit, double *decsplit,
                    double *ubest, int *ndendl, int *jstat, int mtry,
@@ -62,8 +68,8 @@ void predictClassTree(double *x, int n, int mdim, int *treemap,
                       int ndbigtree, int *cat, int nclass,
                       int *jts, int *nodex, int maxcat);
 
-unsigned int pack(int l, int *icat);
-void unpack(int nBits, unsigned int npack, int *icat);
+double pack(const int l, const int *icat);
+void unpack(const double pack, const int nBits, int *icat);
 
 
 void zeroInt(int *x, int length);
@@ -182,6 +188,9 @@ extern "C" void F77_NAME(buildtree)(int *a, int *b, int *cl, int *cat,
                                 double *, double *, double *,
                                 int *, int *, int *);
 
+
+/* maximum number of categories allowed in categorical predictors */
+#define MAX_CAT 53
 
 /* Node status */
 #define NODE_TERMINAL -1

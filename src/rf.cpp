@@ -131,7 +131,7 @@ extern "C" void classRF(double *x, int *dimx, int *cl, int *ncl, int *cat, int *
     wl =         (double *) S_alloc(nclass, sizeof(double));
     wr =         (double *) S_alloc(nclass, sizeof(double));
     classpop =   (double *) S_alloc(nclass* *nrnodes, sizeof(double));
-    tclasscat =  (double *) S_alloc(nclass*32, sizeof(double));
+    tclasscat =  (double *) S_alloc(nclass*MAX_CAT, sizeof(double));
     tclasspop =  (double *) S_alloc(nclass, sizeof(double));
     tx =         (double *) S_alloc(nsample, sizeof(double));
     win =        (double *) S_alloc(nsample, sizeof(double));
@@ -453,7 +453,7 @@ extern "C" void classRF(double *x, int *dimx, int *cl, int *ncl, int *cat, int *
                         x[m + n*mdim] = tx[n];
                         if (jin[n] == 0) {
                             if (jvr[n] == cl[n]) {
-                                +								nrightimp[cl[n] - 1]++;
+                                +                               nrightimp[cl[n] - 1]++;
                                 nrightimpall++;
                             }
                             if (localImp && jvr[n] != jtr[n]) {

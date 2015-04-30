@@ -92,8 +92,8 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
             xlevels <- as.list(rep(0, p))
         }
         maxcat <- max(ncat)
-        if (maxcat > 32)
-            stop("Can not handle categorical predictors with more than 32 categories.")
+        if (maxcat > 53)
+            stop("Can not handle categorical predictors with more than 53 categories.")
 
         if (classRF) {
             nclass <- length(levels(y))
@@ -378,6 +378,10 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
                             inbag = if (keep.inbag) rfout$inbag else NULL)
             } else {
 
+                # center means before regression
+                ymean <- mean(y)
+                y <- y - ymean
+                ytest <- ytest - ymean
 
                 ypred <- double(n)
                 ndbigtree <- integer(ntree)
@@ -457,7 +461,7 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
                     bestvar <-
                         bestvar[1:max.nodes, , drop=FALSE]
                     nodepred <-
-                        nodepred[1:max.nodes, , drop=FALSE]
+                        nodepred[1:max.nodes, , drop=FALSE] + ymean
                     xbestsplit <-
                         xbestsplit[1:max.nodes, , drop=FALSE]
                     leftDaughter <-
@@ -474,7 +478,7 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
                 }
                 out <- list(call = cl,
                             type = "regression",
-                            predicted = structure(ypred, names=x.row.names),
+                            predicted = structure(ypred+ymean, names=x.row.names),
                             mse = mse,
                             rsq = 1 - mse / (var(y) * (n-1) / n),
                             oob.times = oob.times,
@@ -498,9 +502,9 @@ mylevels <- function(x) if (is.factor(x)) levels(x) else 0
                                   list(ncat = ncat), list(nrnodes=max.nodes),
                                   list(ntree=ntree), list(xlevels=xlevels)) else NULL,
                             coefs = if (corr.bias) coef else NULL,
-                            y = y,
+                            y = y + ymean,
                             test = if(testdat) {
-                                list(predicted = structure(ytestpred,
+                                list(predicted = structure(ytestpred+ymean,
                                                            names=xts.row.names),
                                      mse = if(labelts) msets else NULL,
                                      rsq = if(labelts) 1 - msets /

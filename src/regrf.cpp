@@ -315,9 +315,9 @@ template <typename T> void regRF(T *x, double *y, int *xdim, int *sampsize,
     if (*doProx) {
         for (n = 0; n < nsample; ++n) {
             for (k = n + 1; k < nsample; ++k) {
-                prox[nsample*k + n] /= oobprox ?
-                                       (oobpair[nsample*k + n] > 0 ? oobpair[nsample*k + n] : 1) :
-                                           *nTree;
+                prox[nsample*k + n] /= *oobprox ?
+                    (oobpair[nsample*k + n] > 0 ? oobpair[nsample*k + n] : 1) :
+                    *nTree;
                 prox[nsample * n + k] = prox[nsample * k + n];
             }
             prox[nsample * n + n] = 1.0;
@@ -542,7 +542,7 @@ template <typename T> void regTree(T *x, double *y, int *sampling, int mdim, siz
              double *tgini, int *varUsed) {
     int i, j, k, m, ncur, *jdex, *nodestart, *nodepop;
     int ndstart, ndend, ndendl, nodecnt, jstat, msplit;
-    double d, ss, av, decsplit, ubest, sumnode;
+    double d, av, decsplit, ubest, sumnode;
 
     nodestart = (int *) Calloc(nrnodes, int);
     nodepop   = (int *) Calloc(nrnodes, int);
@@ -563,10 +563,8 @@ template <typename T> void regTree(T *x, double *y, int *sampling, int mdim, siz
 
     /* compute mean and sum of squares for Y */
     av = 0.0;
-    ss = 0.0;
     for (i = 0; i < nsample; ++i) {
         d = y[jdex[i] - 1];
-        ss += i * (av - d) * (av - d) / (i + 1);
         av = (i * av + d) / (i + 1);
     }
     avnode[0] = av;
@@ -584,7 +582,6 @@ template <typename T> void regTree(T *x, double *y, int *sampling, int mdim, siz
         sumnode = nodecnt * avnode[k];
         jstat = 0;
         decsplit = 0.0;
-
 
         findBestSplit(x, sampling, jdex, y, mdim, full_nsample, nsample, ndstart, ndend, &msplit,
                       &decsplit, &ubest, &ndendl, &jstat, mtry, sumnode,
@@ -609,11 +606,9 @@ template <typename T> void regTree(T *x, double *y, int *sampling, int mdim, siz
 
         /* compute mean and sum of squares for the left daughter node */
         av = 0.0;
-        ss = 0.0;
         for (j = ndstart; j <= ndendl; ++j) {
             d = y[jdex[j]-1];
             m = j - ndstart;
-            ss += m * (av - d) * (av - d) / (m + 1);
             av = (m * av + d) / (m+1);
         }
         avnode[ncur+1] = av;
@@ -624,11 +619,9 @@ template <typename T> void regTree(T *x, double *y, int *sampling, int mdim, siz
 
         /* compute mean and sum of squares for the right daughter node */
         av = 0.0;
-        ss = 0.0;
         for (j = ndendl + 1; j <= ndend; ++j) {
             d = y[jdex[j]-1];
             m = j - (ndendl + 1);
-            ss += m * (av - d) * (av - d) / (m + 1);
             av = (m * av + d) / (m + 1);
         }
         avnode[ncur + 2] = av;
@@ -656,28 +649,118 @@ template <typename T> void regTree(T *x, double *y, int *sampling, int mdim, siz
 }
 
 /*--------------------------------------------------------------
-findBestSplit for discrete variables, using scanning of
-columns to determine the best split
+Rely on the fact that we have only relatively few values (e.g. 0/1/2),
+so don't sort the values but rather scan through each split
 --------------------------------------------------------------*/
-template <> void findBestSplit(unsigned char *x, int *sampling, int *jdex, double *y, int mdim, size_t full_nsample, int nsample,
+template <> void detectSplit(unsigned char *x, unsigned char *xt, double *yl, int ndstart, int ndend, int nodecnt, int nsample,
+   unsigned char max_x, double sumnode, double critParent,
+   double *critvar, double *ubestt)
+{
+    if (max_x == 0) return;
+
+    double suml = 0.0;
+    int npopl = 0;
+
+    /* gather all cases where x is 0 */
+    for (size_t j = ndstart; j <= ndend; ++j) {
+        unsigned char flag = xt[j] == 0;
+        suml += flag * yl[j];
+        npopl += flag;
+    }
+
+    unsigned char last_split = 0;
+
+    /* try all possible splits */
+    for (unsigned char split = 1; split <= max_x; split++) {
+
+        /* compute effect of split here, but don't split now as we don't know the next potential value */
+        int npopr = nodecnt - npopl;
+        double sumr = sumnode - suml;
+        double crit = (suml * suml / npopl) + (sumr * sumr / npopr) - critParent;
+
+        /* we don't need to compute anything for the last split, as this would only set "sumr" to 0 */
+        if (split < max_x) {
+            int last_npopl = npopl;
+
+            for (size_t j = ndstart; j <= ndend; ++j) {
+                unsigned char flag = xt[j] == split;
+                suml += flag * yl[j];
+                npopl += flag;
+            }
+
+            if (last_npopl == npopl) continue;
+        }
+
+        if (crit > *critvar) {
+            /* be careful not to cause an overflow as split and last_split are chars */
+            *ubestt = split / 2.0 + last_split / 2.0;
+            *critvar = crit;
+        }
+
+        last_split = split;
+    }
+}
+
+/*--------------------------------------------------------------
+Use QuickSort to find the best split for continuous data
+--------------------------------------------------------------*/
+template <> void detectSplit(double *x, double *xt, double *yl, int ndstart, int ndend, int nodecnt, int nsample,
+   double max_x, double sumnode, double critParent,
+   double *critvar, double *ubestt)
+{
+    double *v = (double *) Calloc(nsample, double);
+    int *ncase = (int *) Calloc(nsample, int);
+
+    /* copy the x data in this node. */
+
+    for (size_t j = ndstart; j <= ndend; ++j) v[j] = xt[j];
+    for (size_t j = 1; j <= nsample; ++j) ncase[j - 1] = j;
+    R_qsort_I(v, ncase, ndstart + 1, ndend + 1);
+    if (v[ndstart] >= v[ndend]) return;
+
+    double suml = 0;
+    int npopl = 0;
+
+    /* Search through the "gaps" in the x-variable. */
+    for (size_t j = ndstart; j <= ndend - 1; ++j) {
+        suml += yl[ncase[j] - 1];
+        npopl++;
+        if (v[j] < v[j+1]) {
+            int npopr = nodecnt - npopl;
+            double sumr = sumnode - suml;
+            double crit = (suml * suml / npopl) + (sumr * sumr / npopr) - critParent;
+            if (crit > *critvar) {
+                *ubestt = (v[j] + v[j+1]) / 2.0;
+                *critvar = crit;
+            }
+        }
+    }
+
+    Free(v);
+    Free(ncase);
+}
+
+/*--------------------------------------------------------------
+findBestSplit for discrete and continuous variables
+--------------------------------------------------------------*/
+template <typename T> void findBestSplit(T *x, int *sampling, int *jdex, double *y, int mdim, size_t full_nsample, int nsample,
                    int ndstart, int ndend, int *msplit, double *decsplit,
                    double *ubest, int *ndendl, int *jstat, int mtry,
                    double sumnode, int nodecnt, int *cat) {
-    int last, ncat[32], icat[32], lc, nl, nr, npopl, npopr, last_npopl;
+    int last, ncat[MAX_CAT], icat[MAX_CAT], lc, nl, nr;
     size_t i, j, kv, l;
     int *mind, *ncase;
-    unsigned char *xt;
-    unsigned char max_x, split, current_x, last_split;
-    double *ut, *yl, sumcat[32], avcat[32], tavcat[32], ubestt;
-    double crit, critmax, critvar, suml, sumr, d, critParent;
-    int flag;
+    T *xt;
+    T max_x;
+    double *ut, *yl, sumcat[MAX_CAT], avcat[MAX_CAT], tavcat[MAX_CAT], ubestt;
+    double critmax, critvar, critParent;
 
     ut = (double *) Calloc(nsample, double);
-    xt = (unsigned char *) Calloc(nsample, unsigned char);
+    xt = (T *) Calloc(nsample, T);
     yl = (double *) Calloc(nsample, double);
     mind  = (int *) Calloc(mdim, int);
-    zeroDouble(avcat, 32);
-    zeroDouble(tavcat, 32);
+    zeroDouble(avcat, MAX_CAT);
+    zeroDouble(tavcat, MAX_CAT);
 
     /* START BIG LOOP */
     *msplit = -1;
@@ -701,15 +784,15 @@ template <> void findBestSplit(unsigned char *x, int *sampling, int *jdex, doubl
         if (lc == 1) {
             /* numeric variable */
             for (j = ndstart; j <= ndend; ++j) {
-                current_x = x[full_nsample * kv + sampling[jdex[j] - 1]];
+                T current_x = x[full_nsample * kv + sampling[jdex[j] - 1]];
                 xt[j] = current_x;
                 if (current_x > max_x) max_x = current_x;
                 yl[j] = y[jdex[j] - 1];
             }
         } else {
             /* categorical variable */
-            zeroInt(ncat, 32);
-            zeroDouble(sumcat, 32);
+            zeroInt(ncat, MAX_CAT);
+            zeroDouble(sumcat, MAX_CAT);
             for (j = ndstart; j <= ndend; ++j) {
                 l = (int) x[full_nsample * kv + sampling[jdex[j] - 1]];
                 sumcat[l - 1] += y[jdex[j] - 1];
@@ -721,61 +804,16 @@ template <> void findBestSplit(unsigned char *x, int *sampling, int *jdex, doubl
             }
             /* Make the category mean the `pseudo' X data. */
             for (j = 0; j < nsample; ++j) {
-                current_x = avcat[(int) x[full_nsample * kv + sampling[jdex[j] - 1]] - 1];
+                T current_x = avcat[(int) x[full_nsample * kv + sampling[jdex[j] - 1]] - 1];
                 xt[j] = current_x;
                 if (current_x > max_x) max_x = current_x;
                 yl[j] = y[jdex[j] - 1];
             }
         }
 
-        if (max_x == 0) continue;
-
-        /* changed implementation: rely on the fact that we have only relatively few values (e.g. 0/1/2),
-           so don't sort the values but rather scan through each split
-         */
         critParent = sumnode * sumnode / nodecnt;
-        suml = 0.0;
-        npopl = 0;
-        crit = 0.0;
 
-        /* gather all cases where x is 0 */
-        for (j = ndstart; j <= ndend; ++j) {
-            flag = xt[j] == 0;
-            suml += flag * yl[j];
-            npopl += flag;
-        }
-
-        last_split = 0;
-
-        /* try all possible splits */
-        for (split = 1; split <= max_x; split++) {
-
-            /* compute effect of split here, but don't split now as we don't know the next potential value */
-            npopr = nodecnt - npopl;
-            sumr = sumnode - suml;
-            crit = (suml * suml / npopl) + (sumr * sumr / npopr) - critParent;
-
-            /* we don't need to compute anything for the last split, as this would only set "sumr" to 0 */
-            if (split < max_x) {
-                last_npopl = npopl;
-
-                for (j = ndstart; j <= ndend; ++j) {
-                    flag = xt[j] == split;
-                    suml += flag * yl[j];
-                    npopl += flag;
-                }
-
-                if (last_npopl == npopl) continue;
-            }
-
-            if (crit > critvar) {
-                /* be careful not to cause an overflow as split and last_split are chars */
-                ubestt = split / 2.0 + last_split / 2.0;
-                critvar = crit;
-            }
-
-            last_split = split;
-        }
+        detectSplit(x, xt, yl, ndstart, ndend, nodecnt, nsample, max_x, sumnode, critParent, &critvar, &ubestt);
 
         if (critvar > critmax) {
             *ubest = ubestt;
@@ -825,154 +863,6 @@ template <> void findBestSplit(unsigned char *x, int *sampling, int *jdex, doubl
 
     Free(mind);
     Free(yl);
-    Free(xt);
-    Free(ut);
-}
-
-
-/*--------------------------------------------------------------
-findBestSplit for continuous variables, using QuickSort
---------------------------------------------------------------*/
-
-template <> void findBestSplit(double *x, int *sampling, int *jdex, double *y, int mdim, size_t full_nsample, int nsample,
-                   int ndstart, int ndend, int *msplit, double *decsplit,
-                   double *ubest, int *ndendl, int *jstat, int mtry,
-                   double sumnode, int nodecnt, int *cat) {
-    int last, ncat[32], icat[32], lc, nl, nr, npopl, npopr, last_npopl;
-    size_t i, j, kv, l;
-    int *mind, *ncase;
-    double *xt, *v;
-    double *ut, *yl, sumcat[32], avcat[32], tavcat[32], ubestt;
-    double crit, critmax, critvar, suml, sumr, d, critParent;
-    int flag;
-
-    ut = (double *) Calloc(nsample, double);
-    xt = (double *) Calloc(nsample, double);
-    v  = (double *) Calloc(nsample, double);
-    yl = (double *) Calloc(nsample, double);
-    ncase = (int *) Calloc(nsample, int);
-    mind  = (int *) Calloc(mdim, int);
-    zeroDouble(avcat, 32);
-    zeroDouble(tavcat, 32);
-
-    /* START BIG LOOP */
-    *msplit = -1;
-    *decsplit = 0.0;
-    critmax = 0.0;
-    ubestt = 0.0;
-    for (i=0; i < mdim; ++i) mind[i] = i;
-
-    last = mdim - 1;
-    for (i = 0; i < mtry; ++i) {
-        critvar = 0.0;
-        j = (int) (unif_rand() * (last+1));
-        kv = mind[j];
-        swapInt(mind[j], mind[last]);
-        last--;
-
-        lc = cat[kv];
-
-        if (lc == 1) {
-            /* numeric variable */
-            for (j = ndstart; j <= ndend; ++j) {
-                xt[j] = x[full_nsample * kv + sampling[jdex[j] - 1]];
-                yl[j] = y[jdex[j] - 1];
-            }
-        } else {
-            /* categorical variable */
-            zeroInt(ncat, 32);
-            zeroDouble(sumcat, 32);
-            for (j = ndstart; j <= ndend; ++j) {
-                l = (int) x[full_nsample * kv + sampling[jdex[j] - 1]];
-                sumcat[l - 1] += y[jdex[j] - 1];
-                ncat[l - 1] ++;
-            }
-            /* Compute means of Y by category. */
-            for (j = 0; j < lc; ++j) {
-                avcat[j] = ncat[j] ? sumcat[j] / ncat[j] : 0.0;
-            }
-            /* Make the category mean the `pseudo' X data. */
-            for (j = 0; j < nsample; ++j) {
-                xt[j] = avcat[(int) x[full_nsample * kv + sampling[jdex[j] - 1]] - 1];
-                yl[j] = y[jdex[j] - 1];
-            }
-        }
-
-        /* copy the x data in this node. */
-        for (j = ndstart; j <= ndend; ++j) v[j] = xt[j];
-        for (j = 1; j <= nsample; ++j) ncase[j - 1] = j;
-        R_qsort_I(v, ncase, ndstart + 1, ndend + 1);
-        if (v[ndstart] >= v[ndend]) continue;
-
-        critParent = sumnode * sumnode / nodecnt;
-        suml = 0.0;
-        npopl = 0;
-        crit = 0.0;
-
-        /* Search through the "gaps" in the x-variable. */
-        for (j = ndstart; j <= ndend - 1; ++j) {
-            d = yl[ncase[j] - 1];
-            suml += d;
-            npopl++;
-            if (v[j] < v[j+1]) {
-                npopr = nodecnt - npopl;
-                sumr = sumnode - suml;
-                crit = (suml * suml / npopl) + (sumr * sumr / npopr) - critParent;
-                if (crit > critvar) {
-                    ubestt = (v[j] + v[j+1]) / 2.0;
-                    critvar = crit;
-                }
-            }
-        }
-
-        if (critvar > critmax) {
-            *ubest = ubestt;
-            *msplit = kv + 1;
-            critmax = critvar;
-            for (j = ndstart; j <= ndend; ++j) {
-                ut[j] = xt[j];
-            }
-            if (cat[kv] > 1) {
-                for (j = 0; j < cat[kv]; ++j) tavcat[j] = avcat[j];
-            }
-        }
-    }
-    *decsplit = critmax;
-
-    /* If best split can not be found, set to terminal node and return. */
-    if (*msplit != -1) {
-        nl = ndstart;
-        for (j = ndstart; j <= ndend; ++j) {
-            if (ut[j] <= *ubest) {
-                nl++;
-                ncase[nl-1] = jdex[j];
-            }
-        }
-        *ndendl = imax2(nl - 1, ndstart);
-        nr = *ndendl + 1;
-        for (j = ndstart; j <= ndend; ++j) {
-            if (ut[j] > *ubest) {
-                if (nr >= nsample) break;
-                nr++;
-                ncase[nr - 1] = jdex[j];
-            }
-        }
-        if (*ndendl >= ndend) *ndendl = ndend - 1;
-        for (j = ndstart; j <= ndend; ++j) jdex[j] = ncase[j];
-
-        lc = cat[*msplit - 1];
-        if (lc > 1) {
-            for (j = 0; j < lc; ++j) {
-                icat[j] = (tavcat[j] < *ubest) ? 1 : 0;
-            }
-            *ubest = pack(lc, icat);
-        }
-    } else *jstat = 1;
-
-    Free(ncase);
-    Free(mind);
-    Free(yl);
-    Free(v);
     Free(xt);
     Free(ut);
 }
